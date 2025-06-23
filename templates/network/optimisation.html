@@ -1,0 +1,301 @@
+{% extends "base.html" %}
+{% load crispy_forms_tags %}
+
+{% block title %}Optimisation Configuration{% endblock %}
+
+{% block content %}
+<div class="card mb-4">
+    <div class="card-header">
+        <h2>Optimisation Configuration</h2>
+    </div>
+    <div class="card-body">
+        <ul class="nav nav-tabs mb-4">
+            <li class="nav-item">
+                <a class="nav-link {% if active_tab == 'compression' %}active{% endif %}" 
+                   href="?tab=compression">Compression</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {% if active_tab == 'fec' %}active{% endif %}" 
+                   href="?tab=fec">Error Correction</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {% if active_tab == 'congestion' %}active{% endif %}" 
+                   href="?tab=congestion">Congestion Control</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {% if active_tab == 'traffic' %}active{% endif %}" 
+                   href="?tab=traffic">Traffic Shaping</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {% if active_tab == 'qos' %}active{% endif %}" 
+                   href="?tab=qos">QoS</a>
+            </li>
+        </ul>
+
+        {% if active_tab == 'compression' %}
+        <div class="row">
+            <div class="col-md-6">
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h4>Data Compression</h4>
+                    </div>
+                    <div class="card-body">
+                        <form method="post">
+                            {% csrf_token %}
+                            <input type="hidden" name="form_type" value="compression">
+                            {{ compression_form|crispy }}
+                            <button type="submit" class="btn btn-primary">Save Compression Settings</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h4>Compression Statistics</h4>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-striped">
+                                <tbody>
+                                    <tr>
+                                        <th>Algorithm</th>
+                                        <td>{{ stats.algorithm }}</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Compression Ratio</th>
+                                        <td>{{ stats.ratio }}:1</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Bytes In</th>
+                                        <td>{{ stats.bytes_in|filesizeformat }}</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Bytes Out</th>
+                                        <td>{{ stats.bytes_out|filesizeformat }}</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Savings</th>
+                                        <td>{{ stats.savings|filesizeformat }} ({{ stats.savings_percent }}%)</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        {% elif active_tab == 'fec' %}
+        <div class="row">
+            <div class="col-md-6">
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h4>Forward Error Correction</h4>
+                    </div>
+                    <div class="card-body">
+                        <form method="post">
+                            {% csrf_token %}
+                            <input type="hidden" name="form_type" value="fec">
+                            {{ fec_form|crispy }}
+                            <button type="submit" class="btn btn-primary">Save FEC Settings</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h4>FEC Statistics</h4>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-striped">
+                                <tbody>
+                                    <tr>
+                                        <th>Algorithm</th>
+                                        <td>{{ stats.algorithm }}</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Packets Sent</th>
+                                        <td>{{ stats.packets_sent }}</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Packets Recovered</th>
+                                        <td>{{ stats.packets_recovered }}</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Recovery Rate</th>
+                                        <td>{{ stats.recovery_rate }}%</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Overhead</th>
+                                        <td>{{ stats.overhead }}%</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        {% elif active_tab == 'congestion' %}
+        <div class="row">
+            <div class="col-md-6">
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h4>Congestion Control</h4>
+                    </div>
+                    <div class="card-body">
+                        <form method="post">
+                            {% csrf_token %}
+                            <input type="hidden" name="form_type" value="congestion">
+                            {{ congestion_form|crispy }}
+                            <button type="submit" class="btn btn-primary">Save Congestion Settings</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h4>Congestion Statistics</h4>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-striped">
+                                <tbody>
+                                    <tr>
+                                        <th>Algorithm</th>
+                                        <td>{{ stats.algorithm }}</td>
+                                    </tr>
+                                    <tr>
+                                        <th>RTT</th>
+                                        <td>{{ stats.rtt }} ms</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Packet Loss</th>
+                                        <td>{{ stats.loss }}%</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Throughput</th>
+                                        <td>{{ stats.throughput }} Mbps</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Bufferbloat</th>
+                                        <td>{{ stats.bufferbloat }} ms</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        {% elif active_tab == 'traffic' %}
+        <div class="row">
+            <div class="col-md-6">
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h4>Traffic Shaping</h4>
+                    </div>
+                    <div class="card-body">
+                        <form method="post">
+                            {% csrf_token %}
+                            <input type="hidden" name="form_type" value="shaping">
+                            {{ shaping_form|crispy }}
+                            <button type="submit" class="btn btn-primary">Save Shaping Settings</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h4>Shaping Statistics</h4>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>Interface</th>
+                                        <th>Rate</th>
+                                        <th>Ceiling</th>
+                                        <th>Priority</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for interface in stats.interfaces %}
+                                    <tr>
+                                        <td>{{ interface.name }}</td>
+                                        <td>{{ interface.rate }}</td>
+                                        <td>{{ interface.ceiling }}</td>
+                                        <td>{{ interface.priority }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        {% elif active_tab == 'qos' %}
+        <div class="row">
+            <div class="col-md-6">
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h4>Quality of Service</h4>
+                    </div>
+                    <div class="card-body">
+                        <form method="post">
+                            {% csrf_token %}
+                            <input type="hidden" name="form_type" value="qos">
+                            {{ qos_form|crispy }}
+                            <button type="submit" class="btn btn-primary">Save QoS Settings</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h4>QoS Statistics</h4>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>Class</th>
+                                        <th>Rate</th>
+                                        <th>Priority</th>
+                                        <th>Packets</th>
+                                        <th>Bytes</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for class in stats.classes %}
+                                    <tr>
+                                        <td>{{ class.name }}</td>
+                                        <td>{{ class.rate }}</td>
+                                        <td>{{ class.priority }}</td>
+                                        <td>{{ class.packets }}</td>
+                                        <td>{{ class.bytes|filesizeformat }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

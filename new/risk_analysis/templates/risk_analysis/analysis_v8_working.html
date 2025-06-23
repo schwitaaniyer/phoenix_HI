@@ -1,0 +1,260 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Risk Analysis</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .table th, .table td { vertical-align: middle; }
+        .risks-column { white-space: normal; }
+        .risk-item { display: flex; align-items: center; margin-bottom: 8px; }
+        .risk-name { flex-grow: 1; min-width: 200px; }
+        .badge { 
+            font-size: 0.85em; 
+            min-width: 80px; 
+            text-align: center; 
+            padding: 5px 10px; 
+            border-radius: 4px;
+            color: white;
+        }
+        .badge-high { background-color: #be1f1f; }
+        .badge-medium { background-color: #d9792a; }
+        .badge-low { background-color: #318435; }
+        .badge-severe { background-color: #b71c1c; }
+        .filter-group { display: flex; gap: 10px; margin-bottom: 20px; align-items: center; }
+    </style>
+</head>
+<body>
+    <div class="container mt-5">
+        <h1>Packet Risk Analysis</h1>
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-{% if message.tags == 'success' %}success{% else %}danger{% endif %}">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+        <h3>Control Packet Capture</h3>
+        <div class="mb-4">
+            <button id="startCapture" class="btn btn-success" {% if capture_running %}disabled{% endif %}>Start Capture</button>
+            <button id="stopCapture" class="btn btn-danger" {% if not capture_running %}disabled{% endif %}>Stop Capture</button>
+            <button id="startSessionCapture" class="btn btn-primary">Start Session Capture</button>
+            <button id="stopSessionCapture" class="btn btn-warning" disabled>Stop Session Capture</button>
+        </div>
+        <h3>Filters</h3>
+        <div class="filter-group">
+            <div>
+                <label for="interfaceFilter">Interface:</label>
+                <select id="interfaceFilter" class="form-select">
+                    {% for iface in interfaces %}
+                        <option value="{{ iface }}" {% if iface == 'ens224' %}selected{% endif %}>{{ iface }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <button id="applyFilter" class="btn btn-primary">Apply Filter</button>
+        </div>
+        <h3>Upload Packet File</h3>
+        <form method="post" enctype="multipart/form-data" class="mb-4">
+            {% csrf_token %}
+            <div class="input-group">
+                <input type="file" name="packet_file" accept=".json" class="form-control">
+                <button type="submit" class="btn btn-primary">Analyze</button>
+            </div>
+        </form>
+        <h3>Packet Flows</h3>
+        <table class="table table-striped table-hover" id="packetTable">
+            <thead class="table-dark">
+                <tr>
+                    <th>Timestamp</th>
+                    <th>Source</th>
+                    <th>Destination</th>
+                    <th>Protocol</th>
+                    <th>nDPI Protocol</th>
+                    <th>Risks</th>
+                </tr>
+            </thead>
+            <tbody id="packetTableBody">
+                {% for packet in packets %}
+                <tr data-packet-id="{{ packet.id }}">
+                    <td>{{ packet.first_seen|date:"Y-m-d H:i:s" }}</td>
+                    <td>{{ packet.source_ip }}:{{ packet.source_port|default:"None" }}</td>
+                    <td>{{ packet.destination_ip }}:{{ packet.destination_port|default:"None" }}</td>
+                    <td>{{ packet.protocol }}</td>
+                    <td>{{ packet.ndpi_protocol }}</td>
+                    <td class="risks-column">
+                        {% for risk in packet.risks %}
+                            <div class="risk-item">
+                                <span class="risk-name">{{ risk.name }}</span>
+                                <span class="badge 
+                                    {% if risk.severity|upper == 'HIGH' %}badge-high
+                                    {% elif risk.severity|upper == 'MEDIUM' %}badge-medium
+                                    {% elif risk.severity|upper == 'SEVERE' %}badge-severe
+                                    {% else %}badge-low{% endif %}">
+                                    {{ risk.severity }}
+                                </span>
+                            </div>
+                        {% empty %}
+                            No risks detected
+                        {% endfor %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="6" class="text-center">No packets analyzed yet.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    {% if severe_alert %}
+    <div class="modal fade" id="severeAlertModal" tabindex="-1" aria-labelledby="severeAlertModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="severeAlertModalLabel">Critical Network Security Alert</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    A packet flow with SEVERE risk has been detected. This indicates a critical security threat, such as potential malware, unauthorized access, or severe protocol violation. Immediate investigation and mitigation are strongly recommended.
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Acknowledge</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const hasSevereAlert = {% if severe_alert %}true{% else %}false{% endif %};
+            if (hasSevereAlert) {
+                var severeModal = new bootstrap.Modal(document.getElementById('severeAlertModal'));
+                severeModal.show();
+            }
+
+            const startCaptureBtn = document.getElementById('startCapture');
+            const stopCaptureBtn = document.getElementById('stopCapture');
+            const startSessionCaptureBtn = document.getElementById('startSessionCapture');
+            const stopSessionCaptureBtn = document.getElementById('stopSessionCapture');
+            const interfaceFilter = document.getElementById('interfaceFilter');
+            const applyFilterBtn = document.getElementById('applyFilter');
+
+            startCaptureBtn.addEventListener('click', function() {
+                fetch('/risk_analysis/start_capture/', {
+                    method: 'POST',
+                    headers: { 'X-CSRFToken': getCsrfToken() }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    alert(data.message);
+                    if (data.status === 'success') {
+                        startCaptureBtn.disabled = true;
+                        stopCaptureBtn.disabled = false;
+                    }
+                });
+            });
+
+            stopCaptureBtn.addEventListener('click', function() {
+                fetch('/risk_analysis/stop_capture/', {
+                    method: 'POST',
+                    headers: { 'X-CSRFToken': getCsrfToken() }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    alert(data.message);
+                    if (data.status === 'success') {
+                        startCaptureBtn.disabled = false;
+                        stopCaptureBtn.disabled = true;
+                    }
+                });
+            });
+
+            startSessionCaptureBtn.addEventListener('click', function() {
+                fetch('/risk_analysis/start_session_capture/', {
+                    method: 'POST',
+                    headers: { 'X-CSRFToken': getCsrfToken() }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    alert(data.message);
+                    if (data.status === 'success') {
+                        startSessionCaptureBtn.disabled = true;
+                        stopSessionCaptureBtn.disabled = false;
+                    }
+                });
+            });
+
+            stopSessionCaptureBtn.addEventListener('click', function() {
+                fetch('/risk_analysis/stop_session_capture/', {
+                    method: 'POST',
+                    headers: { 'X-CSRFToken': getCsrfToken() }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    alert(data.message);
+                    if (data.status === 'success') {
+                        startSessionCaptureBtn.disabled = false;
+                        stopSessionCaptureBtn.disabled = true;
+                    }
+                });
+            });
+
+            function getCsrfToken() {
+                return document.querySelector('[name=csrfmiddlewaretoken]').value;
+            }
+
+            function fetchFlows() {
+                const interface = interfaceFilter.value;
+                fetch(`/risk_analysis/get_latest_flows/?interface=${interface}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        const tbody = document.getElementById('packetTableBody');
+                        const existingIds = new Set(Array.from(tbody.querySelectorAll('tr')).map(row => row.dataset.packetId));
+                        let severeAlert = false;
+
+                        data.packets.forEach(packet => {
+                            if (!existingIds.has(packet.id.toString())) {
+                                const row = document.createElement('tr');
+                                row.dataset.packetId = packet.id;
+                                row.innerHTML = `
+                                    <td>${packet.first_seen}</td>
+                                    <td>${packet.source_ip}:${packet.source_port || 'None'}</td>
+                                    <td>${packet.destination_ip}:${packet.destination_port || 'None'}</td>
+                                    <td>${packet.protocol}</td>
+                                    <td>${packet.ndpi_protocol}</td>
+                                    <td class="risks-column">
+                                        ${packet.risks.map(risk => `
+                                            <div class="risk-item">
+                                                <span class="risk-name">${risk.name}</span>
+                                                <span class="badge ${
+                                                    risk.severity.toUpperCase() === 'HIGH' ? 'badge-high' :
+                                                    risk.severity.toUpperCase() === 'MEDIUM' ? 'badge-medium' :
+                                                    risk.severity.toUpperCase() === 'SEVERE' ? 'badge-severe' :
+                                                    'badge-low'
+                                                }">${risk.severity}</span>
+                                            </div>
+                                        `).join('') || 'No risks detected'}
+                                    </td>
+                                `;
+                                tbody.prepend(row);
+                                if (packet.severe) {
+                                    severeAlert = true;
+                                }
+                            }
+                        });
+
+                        if (severeAlert) {
+                            var severeModal = new bootstrap.Modal(document.getElementById('severeAlertModal'));
+                            severeModal.show();
+                        }
+                    });
+            }
+
+            applyFilterBtn.addEventListener('click', fetchFlows);
+            setInterval(fetchFlows, 5000);
+            fetchFlows();
+        });
+    </script>
+</body>
+</html>

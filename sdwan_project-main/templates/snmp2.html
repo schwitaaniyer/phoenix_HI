@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/static/css/snmp1.css">
+    <title>SNMP Configuration</title>
+</head>
+
+
+
+<body>
+    <h1>SNMP Configuration</h1>
+    <form method="post" id="snmp_form">
+        {% csrf_token %}
+        <h2>General Settings</h2>
+        <label for="location">Location:</label>
+        <input type="text" id="location" name="location" required><br><br>
+        
+        <label for="contact">Contact:</label>
+        <input type="text" id="contact" name="contact" required><br><br>
+        
+        <input type="checkbox" id="enable_snmp" name="enable_snmp">
+        <label for="enable_snmp">Enable SNMP</label><br><br>
+
+        <h2>SNMP Settings</h2>
+        <label for="get_community">Get Community:</label>
+        <input type="text" id="get_community" name="get_community" required><br><br>
+
+        <label for="get_host_lan">Get Host/LAN:</label>
+        <input type="text" id="get_host_lan" name="get_host_lan" required><br><br>
+
+        <label for="set_community">Set Community:</label>
+        <input type="text" id="set_community" name="set_community" required><br><br>
+
+        <label for="set_host_lan">Set Host/LAN:</label>
+        <input type="text" id="set_host_lan" name="set_host_lan" required><br><br>
+
+        <label for="trap_receiver_ip">Trap Receiver IP:</label>
+        <input type="text" id="trap_receiver_ip" name="trap_receiver_ip" required><br><br>
+
+        <h1>SNMP v3 Configuration</h1>
+        
+        <label for="username">Username:</label>
+        <input type="text" id="username" name="username" value="admin_user" required><br><br>
+        
+        <label for="security_mode">Security Mode:</label>
+        <select id="security_mode" name="security_mode">
+            <option value="AuthPriv">AuthPriv</option>
+            <option value="AuthNoPriv">AuthNoPriv</option>
+            <option value="NoAuthNoPriv">NoAuthNoPriv</option>
+        </select><br><br>
+        
+        <label for="authentication">Authentication:</label>
+        <select id="authentication" name="authentication">
+            <option value="MD5">MD5</option>
+            <option value="SHA">SHA</option>
+            <!-- Add other authentication options if necessary -->
+        </select><br><br>
+        
+        <label for="authentication_password">Authentication Password:</label>
+        <input type="password" id="authentication_password" name="authentication_password" required><br><br>
+        
+        <label for="encryption">Encryption:</label>
+        <select id="encryption" name="encryption">
+            <option value="DES">DES</option>
+            <option value="AES">AES</option>
+            <!-- Add other encryption options if necessary -->
+        </select><br><br>
+        
+        <label for="encryption_password">Encryption Password:</label>
+        <input type="password" id="encryption_password" name="encryption_password" required><br><br>
+        
+
+
+        <button type="submit">Submit</button>
+    </form>
+</body>
+</html>

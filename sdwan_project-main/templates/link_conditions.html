@@ -1,0 +1,88 @@
+<!-- templates/link_conditions.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Link Conditions</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <h1>Link Conditions and Switch Details</h1>
+
+    <label for="duration">Select Duration (minutes):</label>
+    <input type="number" id="duration" min="1" max="60" value="60">
+    <button onclick="fetchData()">Fetch Data</button>
+
+    <h2>LTE1 Packet Loss</h2>
+    <canvas id="lte1PacketLossChart"></canvas>
+
+    <h2>LTE2 Packet Loss</h2>
+    <canvas id="lte2PacketLossChart"></canvas>
+
+    <h2>LTE1 RF Parameters</h2>
+    <canvas id="lte1RFChart"></canvas>
+
+    <h2>LTE2 RF Parameters</h2>
+    <canvas id="lte2RFChart"></canvas>
+
+    <script>
+        async function fetchData() {
+            const duration = document.getElementById("duration").value;
+            try {
+                const response = await fetch(`/get_link_data?duration=${duration}`);
+                const data = await response.json();
+
+                if (data.error) {
+                    alert(data.error);
+                    return;
+                }
+
+                updateCharts(data);
+            } catch (error) {
+                console.error("Error fetching data:", error);
+            }
+        }
+
+        function updateCharts(data) {
+            // Parse and update charts for LTE1 and LTE2 packet loss and RF parameters
+            updateChart("lte1PacketLossChart", data.lte1_loss, "Packet Loss");
+            updateChart("lte2PacketLossChart", data.lte2_loss, "Packet Loss");
+
+            updateChart("lte1RFChart", data.lte1_params, "RSRP, RSRQ, SINR");
+            updateChart("lte2RFChart", data.lte2_params, "RSRP, RSRQ, SINR");
+        }
+
+        function updateChart(canvasId, data, label) {
+            const ctx = document.getElementById(canvasId).getContext("2d");
+            const timestamps = data.map(item => item.Timestamp);
+            const values = data.map(item => item.pckt_loss || item.rsrp); // Example for dynamic keys
+
+            new Chart(ctx, {
+                type: "line",
+                data: {
+                    labels: timestamps,
+                    datasets: [
+                        {
+                            label: label,
+                            data: values,
+                            borderColor: "blue",
+                            fill: false
+                        }
+                    ]
+                },
+                options: {
+                    scales: {
+                        x: {
+                            type: "time",
+                            time: {
+                                unit: "minute"
+                            }
+                        }
+                    }
+                }
+            });
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,105 @@
+{# Adapted from new/network_monitoring/templates/network_monitoring/lte.html and dashboard.html #}
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h4>RF Parameters (Real-Time)</h4>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Timestamp</th>
+                                    <th>LTE Type</th>
+                                    <th>RSRP</th>
+                                    <th>RSRP Index</th>
+                                    <th>RSRQ</th>
+                                    <th>RSRQ Index</th>
+                                    <th>SINR</th>
+                                    <th>LQI</th>
+                                    <th>Link Condition</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {# Example row, replace with actual data #}
+                                <tr>
+                                    <td>{{ lte1_actual.timestamp }}</td>
+                                    <td>LTE1</td>
+                                    <td>{{ lte1_actual.rsrp }}</td>
+                                    <td>{{ lte1_actual.rsrp_index }}</td>
+                                    <td>{{ lte1_actual.rsrq }}</td>
+                                    <td>{{ lte1_actual.rsrq_index }}</td>
+                                    <td>{{ lte1_actual.sinr }}</td>
+                                    <td>{{ lte1_actual.lqi }}</td>
+                                    <td>{{ lte1_actual.link_condition }}</td>
+                                </tr>
+                                <tr>
+                                    <td>{{ lte2_actual.timestamp }}</td>
+                                    <td>LTE2</td>
+                                    <td>{{ lte2_actual.rsrp }}</td>
+                                    <td>{{ lte2_actual.rsrp_index }}</td>
+                                    <td>{{ lte2_actual.rsrq }}</td>
+                                    <td>{{ lte2_actual.rsrq_index }}</td>
+                                    <td>{{ lte2_actual.sinr }}</td>
+                                    <td>{{ lte2_actual.lqi }}</td>
+                                    <td>{{ lte2_actual.link_condition }}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h4>Predicted LTE Parameters</h4>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Timestamp</th>
+                                    <th>LTE Type</th>
+                                    <th>Predicted RSRP</th>
+                                    <th>Predicted RSRQ</th>
+                                    <th>Predicted SINR</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>{{ lte1_pred.timestamp }}</td>
+                                    <td>LTE1</td>
+                                    <td>{{ lte1_pred.predicted_rsrp }}</td>
+                                    <td>{{ lte1_pred.predicted_rsrq }}</td>
+                                    <td>{{ lte1_pred.predicted_sinr }}</td>
+                                </tr>
+                                <tr>
+                                    <td>{{ lte2_pred.timestamp }}</td>
+                                    <td>LTE2</td>
+                                    <td>{{ lte2_pred.predicted_rsrp }}</td>
+                                    <td>{{ lte2_pred.predicted_rsrq }}</td>
+                                    <td>{{ lte2_pred.predicted_sinr }}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h4>Recommended Action</h4>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info">
+                        {{ recommended_action }}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div> 

@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Network Monitoring Configuration</title>
+    <link rel="stylesheet" href="/static/css/common.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #2c3e50;
+            color: #ecf0f1;
+            margin: 0;
+            padding: 0;
+        }
+
+        nav {
+            background: #1a252f;
+            color: #ecf0f1;
+            padding: 15px;
+            text-align: center;
+            font-size: 20px;
+            font-weight: bold;
+        }
+
+        .content {
+            width: 90%;
+            margin: 20px auto;
+            padding: 20px;
+        }
+
+        .section-container {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .section {
+            flex: 1;
+            padding: 15px;
+            background: #34495e;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .left-column {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .right-column {
+            flex: 1;
+        }
+
+        .section-title {
+            font-size: 18px;
+            margin-bottom: 15px;
+            border-bottom: 1px solid #7f8c8d;
+            padding-bottom: 8px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: #34495e;
+            color: #ecf0f1;
+            border-radius: 8px;
+        }
+
+        td,
+        th {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #7f8c8d;
+        }
+
+        th {
+            background: #1a252f;
+        }
+
+        input {
+            width: 95%;
+            padding: 10px;
+            margin: 5px 0;
+            border: 1px solid #7f8c8d;
+            border-radius: 4px;
+            background: #ecf0f1;
+            color: #2c3e50;
+        }
+
+        button {
+            background: #2980b9;
+            color: white;
+            padding: 10px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-top: 15px;
+        }
+
+        button:hover {
+            background: #1c5985;
+        }
+
+        #saveButton {
+            width: 200px;
+            margin: 20px auto;
+            display: block;
+        }
+
+        #message {
+            margin-top: 10px;
+            color: #2ecc71;
+            font-weight: bold;
+            text-align: center;
+        }
+
+        .ip-container {
+            margin-bottom: 10px;
+        }
+
+        .ip-entry {
+            display: flex;
+            margin-bottom: 10px;
+            align-items: center;
+            padding: 8px;
+            background: rgba(0, 0, 0, 0.1);
+            border-radius: 4px;
+        }
+
+        .ip-entry select {
+            width: 100px;
+            padding: 10px;
+            margin-right: 10px;
+            border: 1px solid #7f8c8d;
+            border-radius: 4px;
+            background: #ecf0f1;
+            color: #2c3e50;
+        }
+
+        .ip-entry input {
+            flex-grow: 1;
+            margin-right: 10px;
+        }
+
+        .remove-ip {
+            background: #95a5a6;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 8px 12px;
+            cursor: pointer;
+            margin-top: 0;
+        }
+
+        .remove-ip:hover {
+            background: #7f8c8d;
+        }
+
+        .add-ip {
+            background: #27ae60;
+            color: white;
+            padding: 10px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-top: 10px;
+            width: auto;
+        }
+
+        .lte-header {
+            font-weight: bold;
+            background-color: #1a252f;
+            text-align: center;
+        }
+
+        .separator {
+            height: 10px;
+            background-color: transparent;
+        }
+
+        .toggle-container {
+            display: flex;
+            align-items: center;
+            margin-bottom: 5px;
+        }
+
+        .toggle-container input[type="checkbox"] {
+            width: auto;
+            margin-right: 10px;
+        }
+
+        .toggle-label {
+            margin-right: 10px;
+        }
+
+        .threshold-input {
+            width: 100%;
+            display: flex;
+            align-items: center;
+        }
+
+        .threshold-input input {
+            flex-grow: 1;
+        }
+
+        @media (max-width: 768px) {
+            .section-container {
+                flex-direction: column;
+            }
+
+            #saveButton {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <nav>
+        Network Monitoring - Configuration
+    </nav>
+    <div class="content">
+        <form id="configForm">
+            {% csrf_token %}
+
+            <div class="section-container">
+                <div class="left-column">
+                    <div class="section">
+                        <div class="section-title">LQI Parameters</div>
+                        <table>
+                            <tr>
+                                <th>Parameter</th>
+                                <th>Value</th>
+                            </tr>
+                            <tr>
+                                <td>Sampling Interval (Minutes):</td>
+                                <td><input type="number" id="celery_interval" required></td>
+                            </tr>
+                            <tr>
+                                <td>Test Repetition Frequency (z):</td>
+                                <td><input type="number" id="test_repetition" required></td>
+                            </tr>
+                            <tr>
+                                <td>Number of Test Instances (n):</td>
+                                <td><input type="number" id="test_instances" required></td>
+                            </tr>
+                        </table>
+                    </div>
+
+                    <div class="section">
+                        <div class="section-title">Target IP Addresses</div>
+                        <div id="ip-container" class="ip-container">
+                            <!-- IP entries will be added here -->
+                        </div>
+                        <button type="button" class="add-ip" id="add-ip-btn">Add New IP</button>
+                    </div>
+                </div>
+
+                <div class="right-column">
+                    <div class="section">
+                        <div class="section-title">Loss Parameters</div>
+                        <table>
+                            <tr>
+                                <th>Parameter</th>
+                                <th>Value</th>
+                            </tr>
+                            <tr>
+                                <td>Packets per Test (p):</td>
+                                <td><input type="number" id="packets_per_test" required></td>
+                            </tr>
+                            <tr>
+                                <td>Number of test Instances (x):</td>
+                                <td><input type="number" id="loss_per_instance" required></td>
+                            </tr>
+                            <tr>
+                                <td>Time Between Instances (min):</td>
+                                <td><input type="number" id="time_between_instances" required></td>
+                            </tr>
+                            <tr>
+                                <td>Loss Threshold % (LT):</td>
+                                <td><input type="number" id="loss_threshold" required></td>
+                            </tr>
+                            <tr>
+                                <td>Network Interface:</td>
+                                <td><input type="text" id="interface" placeholder="e.g. ens224"></td>
+                            </tr>
+                        </table>
+                    </div>
+
+                    <div class="section">
+                        <div class="section-title">Latency & Jitter Parameters</div>
+                        <table>
+                            <tr>
+                                <th>Parameter</th>
+                                <th>Enable/Threshold</th>
+                            </tr>
+                            <tr>
+                                <td>Latency Monitoring:</td>
+                                <td>
+                                    <div class="toggle-container">
+                                        <input type="checkbox" id="latency_enabled">
+                                        <span class="toggle-label">Enable</span>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>Latency Threshold (ms):</td>
+                                <td><input type="number" id="latency_threshold" min="0" step="0.1"></td>
+                            </tr>
+                            <tr>
+                                <td>Jitter Monitoring:</td>
+                                <td>
+                                    <div class="toggle-container">
+                                        <input type="checkbox" id="jitter_enabled">
+                                        <span class="toggle-label">Enable</span>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>Jitter Threshold (ms):</td>
+                                <td><input type="number" id="jitter_threshold" min="0" step="0.1"></td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <button type="submit" id="saveButton">Save Configuration</button>
+        </form>
+        <p id="message"></p>
+
+        <script>
+            // Load current config when page loads
+            document.addEventListener("DOMContentLoaded", function () {
+                loadCurrentConfig();
+                setupThresholdControls();
+            });
+
+            function setupThresholdControls() {
+                // Setup latency threshold control
+                document.getElementById("latency_enabled").addEventListener("change", function() {
+                    document.getElementById("latency_threshold").disabled = !this.checked;
+                });
+                
+                // Setup jitter threshold control
+                document.getElementById("jitter_enabled").addEventListener("change", function() {
+                    document.getElementById("jitter_threshold").disabled = !this.checked;
+                });
+            }
+
+            function loadCurrentConfig() {
+                fetch("/network_monitoring/get_config/")
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.config) {
+                            document.getElementById("celery_interval").value = data.config.celery_interval || "";
+                            document.getElementById("test_instances").value = data.config.num_test_instances || "";
+                            document.getElementById("packets_per_test").value = data.config.packets_per_test || "";
+                            document.getElementById("loss_per_instance").value = data.config.loss_per_instance || "";
+                            document.getElementById("time_between_instances").value = data.config.time_between_instances || "";
+                            document.getElementById("test_repetition").value = data.config.test_repetition_frequency || "";
+                            document.getElementById("loss_threshold").value = data.config.loss_threshold || "";
+                            document.getElementById("interface").value = data.config.interface || "ens224";
+                            
+                            // Set latency monitoring options
+                            const latencyEnabled = data.config.latency_enabled || false;
+                            document.getElementById("latency_enabled").checked = latencyEnabled;
+                            document.getElementById("latency_threshold").value = data.config.latency_threshold || "100";
+                            document.getElementById("latency_threshold").disabled = !latencyEnabled;
+                            
+                            // Set jitter monitoring options
+                            const jitterEnabled = data.config.jitter_enabled || false;
+                            document.getElementById("jitter_enabled").checked = jitterEnabled;
+                            document.getElementById("jitter_threshold").value = data.config.jitter_threshold || "50";
+                            document.getElementById("jitter_threshold").disabled = !jitterEnabled;
+
+                            // Load IP addresses
+                            const ipContainer = document.getElementById("ip-container");
+                            ipContainer.innerHTML = "";
+
+                            if (data.config.test_ips && Array.isArray(data.config.test_ips)) {
+                                data.config.test_ips.forEach(ipEntry => {
+                                    addIpEntry(ipEntry.type, ipEntry.ip);
+                                });
+                            } else {
+                                // Backward compatibility for single IP
+                                if (data.config.test_ip) {
+                                    addIpEntry("LTE1", data.config.test_ip);
+                                    addIpEntry("LTE2", "8.8.4.4"); // Default secondary IP
+                                } else {
+                                    addIpEntry("LTE1", "8.8.8.8");
+                                    addIpEntry("LTE2", "8.8.4.4");
+                                }
+                            }
+                        }
+                    })
+                    .catch(error => console.error("Error loading config:", error));
+            }
+
+            function addIpEntry(type = "LTE1", ip = "") {
+                const ipContainer = document.getElementById("ip-container");
+                const entryDiv = document.createElement("div");
+                entryDiv.className = "ip-entry";
+
+                const typeSelect = document.createElement("select");
+                typeSelect.className = "ip-type";
+
+                const options = ["LTE1", "LTE2", "LTE3", "LTE4", "Custom"];
+                options.forEach(option => {
+                    const optElement = document.createElement("option");
+                    optElement.value = option;
+                    optElement.textContent = option;
+                    if (option === type) optElement.selected = true;
+                    typeSelect.appendChild(optElement);
+                });
+
+                const ipInput = document.createElement("input");
+                ipInput.type = "text";
+                ipInput.className = "ip-address";
+                ipInput.placeholder = "e.g. 8.8.8.8";
+                ipInput.value = ip;
+                ipInput.required = true;
+
+                const removeBtn = document.createElement("button");
+                removeBtn.type = "button";
+                removeBtn.className = "remove-ip";
+                removeBtn.textContent = "Remove";
+                removeBtn.onclick = function () {
+                    ipContainer.removeChild(entryDiv);
+                };
+
+                entryDiv.appendChild(typeSelect);
+                entryDiv.appendChild(ipInput);
+                entryDiv.appendChild(removeBtn);
+
+                ipContainer.appendChild(entryDiv);
+            }
+
+            // Add IP button event listener
+            document.getElementById("add-ip-btn").addEventListener("click", function () {
+                addIpEntry();
+            });
+
+            document.getElementById("configForm").addEventListener("submit", function (event) {
+                event.preventDefault();
+
+                // Collect IP entries
+                const ipEntries = document.querySelectorAll(".ip-entry");
+                const testIps = Array.from(ipEntries).map(entry => {
+                    return {
+                        type: entry.querySelector(".ip-type").value,
+                        ip: entry.querySelector(".ip-address").value
+                    };
+                });
+
+                // Ensure we have at least LTE1 and LTE2
+                if (testIps.length < 2) {
+                    document.getElementById("message").innerText = "Error: At least two IP addresses (LTE1 and LTE2) are required";
+                    return;
+                }
+
+                // Get latency and jitter configurations
+                const latencyEnabled = document.getElementById("latency_enabled").checked;
+                const jitterEnabled = document.getElementById("jitter_enabled").checked;
+                
+                // Validate threshold values if enabled
+                if (latencyEnabled) {
+                    const latencyThreshold = parseFloat(document.getElementById("latency_threshold").value);
+                    if (isNaN(latencyThreshold) || latencyThreshold <= 0) {
+                        document.getElementById("message").innerText = "Error: Please enter a valid positive value for Latency Threshold";
+                        return;
+                    }
+                }
+                
+                if (jitterEnabled) {
+                    const jitterThreshold = parseFloat(document.getElementById("jitter_threshold").value);
+                    if (isNaN(jitterThreshold) || jitterThreshold <= 0) {
+                        document.getElementById("message").innerText = "Error: Please enter a valid positive value for Jitter Threshold";
+                        return;
+                    }
+                }
+
+                let csrfToken = document.querySelector("[name=csrfmiddlewaretoken]").value;
+                let requestData = {
+                    celery_interval: document.getElementById("celery_interval").value,
+                    num_test_instances: document.getElementById("test_instances").value,
+                    packets_per_test: document.getElementById("packets_per_test").value,
+                    loss_per_instance: document.getElementById("loss_per_instance").value,
+                    time_between_instances: document.getElementById("time_between_instances").value,
+                    test_repetition_frequency: document.getElementById("test_repetition").value,
+                    loss_threshold: document.getElementById("loss_threshold").value,
+                    interface: document.getElementById("interface").value,
+                    test_ips: testIps,
+                    // Add latency and jitter configuration
+                    latency_enabled: latencyEnabled,
+                    latency_threshold: document.getElementById("latency_threshold").value,
+                    jitter_enabled: jitterEnabled,
+                    jitter_threshold: document.getElementById("jitter_threshold").value
+                };
+
+                fetch("/network_monitoring/save_config/", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "X-CSRFToken": csrfToken
+                    },
+                    body: JSON.stringify(requestData)
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        document.getElementById("message").innerText = data.message || data.error;
+                    })
+                    .catch(error => {
+                        console.error("Error:", error);
+                        document.getElementById("message").innerText = "An error occurred while saving configuration";
+                    });
+            });
+        </script>
+</body>
+
+</html>

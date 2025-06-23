@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/static/css/common.css">
+    <title>Authentication</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .container {
+            padding: 20px;
+            margin-top: 150px;
+            background: white;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            width: 600px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            font-size: 14px;
+            margin-bottom: 5px;
+            color: #555;
+        }
+        select {
+            width: 100%;
+            padding: 8px;
+            font-size: 14px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        button {
+            padding: 10px 15px;
+            font-size: 14px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .btn-primary {
+            background-color: #3994b8;
+            color: white;
+            width: 100%;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Authentication Settings</h2>
+        <form id="authForm" method="post">
+            {% csrf_token %}
+            <!-- Authentication Dropdown -->
+            <div class="form-group">
+                <label for="authentication">Select Authentication:</label>
+                <select id="authentication" name="authentication">
+                    <!-- <option value="local">Local</option> -->
+                    <option value="ldap">LDAP</option>
+                    <option value="radius">RADIUS</option>
+                    <option value="tacas">TACACS</option>
+                </select>
+            </div>
+
+            <!-- Fallback Dropdown -->
+            <div class="form-group">
+                <label for="fallback">Enable Fallback:</label>
+                <select id="fallback" name="fallback">
+                    <option value="enable">Enable</option>
+                    <option value="disable">Disable</option>
+                </select>
+            </div>
+
+            <!-- Submit Button -->
+            <button type="button" class="btn-primary" onclick="redirectToPath()">Submit</button>
+        </form>
+    </div>
+
+    <script>
+        function redirectToPath() {
+            const authentication = document.getElementById('authentication').value;
+            const fallback = document.getElementById('fallback').value;
+
+            let path = '';
+            if (authentication === 'local') {
+                path = '/configure-local/';
+            } else if (authentication === 'ldap') {
+                path = '/configure-ldap/';
+            } else if (authentication === 'radius') {
+                path = '/configure-radius/';
+            } else if (authentication === 'tacas') {
+                path = '/configure-tacas/';
+            }
+
+            if (path) {
+                // Append fallback value as a query parameter
+                path += `?fallback=${fallback}`;
+                window.location.href = path;
+            }
+        }
+    </script>
+</body>
+</html>

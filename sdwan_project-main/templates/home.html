@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/static/css/common.css">
+    <title>Home</title>
+</head>
+
+<body>
+    <div class="main">
+        
+        <nav>
+            <div>
+                <div class="menu-icon">
+                    <div class="line-1"></div>
+                    <div class="line-2"></div>
+                    <div class="line-3"></div>
+                </div>
+                <div class="hughes-title">
+                    <h3>Hughes</h3>
+                </div>
+            </div>
+            <div class="nav-child2">
+                <div class="nav-home-logo"><svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <g id="SVGRepo_bgCarrier" stroke-width="0"></g>
+                        <g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g>
+                        <g id="SVGRepo_iconCarrier">
+                            <path fill-rule="evenodd" clip-rule="evenodd"
+                                d="M21.4498 10.275L11.9998 3.1875L2.5498 10.275L2.9998 11.625H3.7498V20.25H20.2498V11.625H20.9998L21.4498 10.275ZM5.2498 18.75V10.125L11.9998 5.0625L18.7498 10.125V18.75H14.9999V14.3333L14.2499 13.5833H9.74988L8.99988 14.3333V18.75H5.2498ZM10.4999 18.75H13.4999V15.0833H10.4999V18.75Z"
+                                fill="#ffffff"></path>
+                        </g>
+                    </svg></div>
+                    {% if user.is_authenticated %}
+                    <div class="user-info" style="color: white; font-weight: bold;">
+                        <span>{{ user.first_name|default:user.username }}</span>
+                    </div>
+                    <form method="post" action="{% url 'logout' %}">
+                        {% csrf_token %}
+                        <button type="submit" class="logout_btn">Logout</button>
+                    </form>
+                    {% else %}
+                    <a href="{% url 'login' %}" class="login_btn">Login</a>
+                    {% endif %}
+    
+                    <div class="theme_button">
+                        <div class="theme_button_child"></div></div>
+            </div>
+
+
+        </nav>
+        <div class="main-body">
+            <div class="menu-list">
+                <ul class="nav-links">
+                    <a href="/firewall">Firewall</a>
+                    <a href="/pie">Packet Inspection</a>
+                    <a href="/routing">Routing</a>
+                    <a href="/networkmanagment">Network Management</a>
+                    <!-- <a href="configure-ldap/">LDAP Authentication</a> -->
+                    <a href="/authentication">Authentication</a>
+                    <a href="/link_conditions">Link Conditions</a>
+
+        
+                </ul>
+            </div>
+            <div class="content"></div>
+        </div>
+    </div>
+    <script src="/static/js/common.js"></script>
+</body>
+
+</html>

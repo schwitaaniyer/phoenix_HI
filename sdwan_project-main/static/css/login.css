@@ -1,0 +1,206 @@
+* {
+    padding: 0;
+    margin: 0;
+    box-sizing: border-box;
+    font-size: small;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+}
+
+body {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    height: 100vh;
+    color: #fff;
+    background: linear-gradient(90deg, rgba(9, 53, 102, 1) 0%, rgba(19, 146, 151, 1) 100%);
+
+
+}
+
+.container {
+    height: 400px;
+    margin-top: 50px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+}
+
+.container-left-body {
+    
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+
+    height: 400px;
+    width: 600px;
+    opacity: 0.5;
+}
+
+
+
+.container-left-body div h1 {
+    font-size: 50px;
+}
+
+.container-right-body {
+    width: 500px;
+    height: 275px;
+    box-shadow: rgba(0, 0, 0, 0.19) 0px 10px 20px, rgba(0, 0, 0, 0.23) 0px 6px 6px;
+    border-radius: 10px;
+}
+
+
+.header {
+    border-radius: 10px 10px 0px 0px;
+    margin-bottom: 20px;
+    height: 50px;
+    width: 100%;
+    background: linear-gradient(270deg, rgba(9, 53, 102, 0.700717787114846) 0%, rgba(19, 146, 151, 0.6979166666666667) 100%);
+    color: white;
+    font-size: 20px;
+    /* border: 1px solid gray; */
+}
+
+
+.header_child {
+    height: 100%;
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+}
+
+
+
+
+.header_title {
+    font-size: 25px;
+}
+
+#form {
+    box-sizing: border-box;
+    height: 220px;
+    width: 400px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    /* border: 1px solid gray; */
+    border-radius: 0px 0px 10px 10px;
+
+}
+
+
+form label {
+    margin: 0 10px;
+    font-size: large;
+}
+
+form input {
+    margin-bottom: 20px;
+    height: 30px;
+    border: 1px solid gray;
+    border-radius: 5px;
+    margin: 0px 10px 15px 20px;
+    opacity: 0.5;
+    width: 90%;
+}
+
+
+button {
+    margin-top: 10px;
+    width: 70px;
+    height: 30px;
+    background: transparent;
+    border: 1px solid gray;
+    border-radius: 5px;
+    cursor: pointer;
+    margin-left: 40%;
+    color: white;
+}
+
+.dark-mode {
+    background-color: #333;
+    color: rgb(248, 243, 243);
+}
+
+.satellite-1 {
+    position: absolute;
+    z-index: -10;
+    left: 500px;
+    top: 5px;
+    width: 300px;
+    height: 300px;
+    rotate: -30deg;
+    animation: sat-1 120s linear infinite;
+    opacity: 0.3;
+    z-index: -2;
+}
+
+@keyframes sat-1 {
+    0% {
+        left: 500px;
+        top: 5px;
+        rotate: -30deg;
+    }
+
+
+
+    50% {
+        left: 1000px;
+        rotate: 10deg;
+    }
+
+
+
+    100% {
+        left: 500px;
+        top: 5px;
+        rotate: -30deg;
+    }
+}
+
+.satellite-2 {
+    position: absolute;
+    bottom: 5px;
+    left: 400px;
+    width: 200px;
+    height: 200px;
+    animation: sat-1 5s timing-function infinite direction fill-mode;
+    opacity: 0.2;
+}
+
+.cloud-1 {
+    position: absolute;
+    top: -20px;
+    left: 10px;
+    width: 300px;
+    height: 300px;
+    opacity: .05;
+    z-index: -5;
+}
+
+.cloud-2 {
+    position: absolute;
+    top: -20px;
+    left: 400px;
+    width: 300px;
+    height: 300px;
+    opacity: .1;
+    z-index: -3;
+    
+    
+}
+
+.cloud-3 {
+    position: absolute;
+    top: -20px;
+    left: 1000px;
+    width: 300px;
+    height: 300px;
+    opacity: .1;
+    z-index: -4;
+    
+    
+}

@@ -1,0 +1,254 @@
+{# Adapted from new/network_monitoring/templates/network_monitoring/config.html #}
+{# Only the content inside <body> is included, with Bootstrap classes and current style #}
+
+<div class="container-fluid">
+    <div class="row">
+        <!-- Left Column -->
+        <div class="col-md-6">
+            <!-- LQI Parameters -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h4>LQI Parameters</h4>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table">
+                            <tbody>
+                                <tr>
+                                    <td>Sampling Interval (seconds)</td>
+                                    <td>
+                                        <input type="number" class="form-control" id="sampling_interval" name="sampling_interval" value="{{ config.sampling_interval|default:2 }}" min="1">
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>Test Repetition Frequency (s)</td>
+                                    <td>
+                                        <input type="number" class="form-control" id="test_repetition" name="test_repetition" value="{{ config.test_repetition|default:12 }}" min="1">
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>Number of Trial Instances</td>
+                                    <td>
+                                        <input type="number" class="form-control" id="num_instances" name="num_instances" value="{{ config.num_instances|default:5 }}" min="1">
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Target IP Addresses -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h4>Target IP Addresses</h4>
+                </div>
+                <div class="card-body">
+                    <div id="ip-addresses">
+                        <!-- IP entries will be dynamically added here -->
+                    </div>
+                    <div class="mt-3">
+                        <button type="button" class="btn btn-primary" id="addIpBtn">
+                            <i class="fas fa-plus"></i> Add New IP
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Column -->
+        <div class="col-md-6">
+            <!-- Loss Parameters -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h4>Loss Parameters</h4>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table">
+                            <tbody>
+                                <tr>
+                                    <td>Packets per Test</td>
+                                    <td>
+                                        <input type="number" class="form-control" id="packets_per_test" name="packets_per_test" value="{{ config.packets_per_test|default:100 }}" min="1">
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>Number of Test Instances</td>
+                                    <td>
+                                        <input type="number" class="form-control" id="num_test_instances" name="num_test_instances" value="{{ config.num_test_instances|default:5 }}" min="1">
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>Time Between Instances (ms)</td>
+                                    <td>
+                                        <input type="number" class="form-control" id="time_between" name="time_between" value="{{ config.time_between|default:1 }}" min="1">
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>Loss Threshold (%)</td>
+                                    <td>
+                                        <input type="number" class="form-control" id="loss_threshold" name="loss_threshold" value="{{ config.loss_threshold|default:5 }}" min="0" max="100">
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>Network Interface</td>
+                                    <td>
+                                        <input type="text" class="form-control" id="network_interface" name="network_interface" value="{{ config.network_interface|default:'enx224' }}">
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Latency & Jitter Parameters -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h4>Latency & Jitter Parameters</h4>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table">
+                            <tbody>
+                                <tr>
+                                    <td>Latency Monitoring</td>
+                                    <td>
+                                        <div class="form-check form-switch">
+                                            <input class="form-check-input" type="checkbox" id="latency_enabled" name="latency_enabled" {% if config.latency_enabled %}checked{% endif %}>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>Latency Threshold (ms)</td>
+                                    <td>
+                                        <input type="number" class="form-control" id="latency_threshold" name="latency_threshold" value="{{ config.latency_threshold|default:5 }}" min="0">
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>Jitter Monitoring</td>
+                                    <td>
+                                        <div class="form-check form-switch">
+                                            <input class="form-check-input" type="checkbox" id="jitter_enabled" name="jitter_enabled" {% if config.jitter_enabled %}checked{% endif %}>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>Jitter Threshold (ms)</td>
+                                    <td>
+                                        <input type="number" class="form-control" id="jitter_threshold" name="jitter_threshold" value="{{ config.jitter_threshold|default:1 }}" min="0">
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Save Button -->
+    <div class="row">
+        <div class="col-12 text-center mb-4">
+            <button id="saveConfigBtn" class="btn btn-primary">Save Configuration</button>
+            <div id="configMessage" class="mt-2"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+// IP Address Management
+function createIpEntry(type = '', ip = '') {
+    const entry = document.createElement('div');
+    entry.className = 'ip-entry mb-2';
+    entry.innerHTML = `
+        <div class="input-group">
+            <select class="form-select" style="width: 100px">
+                <option value="LTE1" ${type === 'LTE1' ? 'selected' : ''}>LTE1</option>
+                <option value="LTE2" ${type === 'LTE2' ? 'selected' : ''}>LTE2</option>
+            </select>
+            <input type="text" class="form-control" placeholder="IP Address" value="${ip}">
+            <button class="btn btn-danger remove-ip" type="button">
+                <i class="fas fa-trash"></i>
+            </button>
+        </div>
+    `;
+
+    entry.querySelector('.remove-ip').addEventListener('click', function() {
+        entry.remove();
+    });
+
+    return entry;
+}
+
+// Initialize default IPs
+const ipContainer = document.getElementById('ip-addresses');
+const defaultIps = [
+    { type: 'LTE1', ip: '8.8.8.8' },
+    { type: 'LTE2', ip: '8.8.4.4' }
+];
+
+// Add default IPs
+defaultIps.forEach(({type, ip}) => {
+    ipContainer.appendChild(createIpEntry(type, ip));
+});
+
+// Add IP button handler
+document.getElementById('addIpBtn').addEventListener('click', function() {
+    ipContainer.appendChild(createIpEntry());
+});
+
+// Update the saveConfigBtn click handler to include IP collection
+document.getElementById('saveConfigBtn').onclick = function() {
+    // Collect all form data
+    const config = {
+        sampling_interval: parseInt(document.getElementById('sampling_interval').value),
+        test_repetition: parseInt(document.getElementById('test_repetition').value),
+        num_instances: parseInt(document.getElementById('num_instances').value),
+        packets_per_test: parseInt(document.getElementById('packets_per_test').value),
+        num_test_instances: parseInt(document.getElementById('num_test_instances').value),
+        time_between: parseInt(document.getElementById('time_between').value),
+        loss_threshold: parseFloat(document.getElementById('loss_threshold').value),
+        network_interface: document.getElementById('network_interface').value,
+        test_ips: Array.from(document.querySelectorAll('.ip-entry')).map(entry => ({
+            type: entry.querySelector('select').value,
+            ip: entry.querySelector('input[type="text"]').value.trim()
+        })).filter(entry => entry.ip !== ''), // Filter out empty IP entries
+        latency_enabled: document.getElementById('latency_enabled').checked,
+        latency_threshold: parseFloat(document.getElementById('latency_threshold').value),
+        jitter_enabled: document.getElementById('jitter_enabled').checked,
+        jitter_threshold: parseFloat(document.getElementById('jitter_threshold').value)
+    };
+
+    // Validate at least one LTE1 and one LTE2
+    const hasLTE1 = config.test_ips.some(entry => entry.type === 'LTE1');
+    const hasLTE2 = config.test_ips.some(entry => entry.type === 'LTE2');
+
+    if (!hasLTE1 || !hasLTE2) {
+        document.getElementById('configMessage').innerText = 'At least one LTE1 and one LTE2 IP address is required';
+        document.getElementById('configMessage').className = 'alert alert-danger mt-2';
+        return;
+    }
+
+    // Send to backend
+    fetch("{% url 'network:monitor_get_config' %}", {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': '{{ csrf_token }}',
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(config)
+    })
+    .then(response => response.json())
+    .then(data => {
+        const messageDiv = document.getElementById('configMessage');
+        messageDiv.innerText = data.message || 'Configuration saved successfully!';
+        messageDiv.className = data.status === 'success' ? 'alert alert-success mt-2' : 'alert alert-danger mt-2';
+    })
+    .catch(error => {
+        document.getElementById('configMessage').innerText = 'Error saving configuration: ' + error;
+        document.getElementById('configMessage').className = 'alert alert-danger mt-2';
+    });
+};
+</script> 

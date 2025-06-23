@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Add Custom Protocol</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .form-section { margin-bottom: 20px; }
+        #portFields { display: none; }
+        .navbar-nav .nav-link { color: #fff; }
+        .navbar-nav .nav-link:hover { color: #ddd; }
+        .error-message { color: red; font-size: 0.9em; }
+        .table-section { margin-top: 30px; }
+        input::placeholder, select:invalid { color: #aaaaaa !important; }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="#">Network Analysis</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'risk_analysis:risk_analysis' %}">Risk Analysis</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="{% url 'risk_analysis:add_protocol_page' %}">Add Protocol</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+    <div class="container mt-5">
+        <h1>Add Custom Protocol</h1>
+        <p>Add a new protocol to be detected by nDPI.</p>
+        <div class="form-section">
+            <form id="protocolForm" action="{% url 'risk_analysis:add_protocol' %}" method="POST">
+                {% csrf_token %}
+                <div class="mb-3">
+                    <label for="format" class="form-label">Protocol Format</label>
+                    <select class="form-select" id="format" name="format" onchange="toggleFields()" required>
+                        <option value="" disabled selected>Select a format</option>
+                        <option value="ip">IP-based (e.g., ip:221.171.85.28@MARS)</option>
+                        <option value="port">Port-based (e.g., tcp:81,tcp:8181@HTTP)</option>
+                        <option value="hostname">Hostname-based (e.g., host:"ntop.org"@ntop)</option>
+                        <option value="ip_hostname">IP/Hostname (e.g., ip:www.ntop.org@ntop)</option>
+                        <option value="ipv6">IPv6-based (e.g., ipv6:[fe80::1]@Custom)</option>
+                    </select>
+                    <div id="formatError" class="error-message"></div>
+                </div>
+                <div class="mb-3">
+                    <label for="value" class="form-label">Value (e.g., IP, Port, Hostname)</label>
+                    <input type="text" class="form-control" id="value" name="value" placeholder="e.g., 221.171.85.28 or tcp:81,tcp:8181 or ntop.org" required>
+                    <div id="valueError" class="error-message"></div>
+                </div>
+                <div class="mb-3" id="portFields">
+                    <label for="port" class="form-label">Port (optional, for IP or IPv6)</label>
+                    <input type="text" class="form-control" id="port" name="port" placeholder="e.g., 443">
+                    <div id="portError" class="error-message"></div>
+                </div>
+                <div class="mb-3">
+                    <label for="protocol_name" class="form-label">Protocol Name</label>
+                    <input type="text" class="form-control" id="protocol_name" name="protocol_name" placeholder="e.g., MARS" required>
+                    <div id="protocolNameError" class="error-message"></div>
+                </div>
+                <div class="mb-3">
+                    <label for="protocol_id" class="form-label">Protocol ID (optional, 1-65535)</label>
+                    <input type="number" class="form-control" id="protocol_id" name="protocol_id" min="1" max="65535" placeholder="e.g., 800">
+                    <div id="protocolIdError" class="error-message"></div>
+                </div>
+                <button type="submit" class="btn btn-primary" id="submitButton">Add Protocol</button>
+            </form>
+        </div>
+        <div class="table-section">
+            <h3>Existing Protocols</h3>
+            {% if protocols %}
+                <table class="table table-bordered">
+                    <thead>
+                        <tr>
+                            <th>Protocol</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for protocol in protocols %}
+                            <tr>
+                                <td>{{ protocol }}</td>
+                                <td>
+                                    <button class="btn btn-danger btn-sm delete-protocol" data-protocol="{{ protocol }}">Delete</button>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% else %}
+                <p>No custom protocols found.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Success Modal -->
+    <div class="modal fade" id="successModal" tabindex="-1" aria-labelledby="successModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="successModalLabel">Success</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <span id="successMessage"></span>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" data-bs-dismiss="modal">OK</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div class="modal fade" id="deleteConfirmModal" tabindex="-1" aria-labelledby="deleteConfirmModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="deleteConfirmModalLabel">Confirm Deletion</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    Are you sure you want to delete the protocol "<span id="deleteProtocolName"></span>"?
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-danger" id="confirmDelete">Delete</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function toggleFields() {
+            const format = document.getElementById('format').value;
+            document.getElementById('portFields').style.display = (format === 'ip' || format === 'ipv6') ? 'block' : 'none';
+        }
+
+        function clearErrors() {
+            document.getElementById('formatError').textContent = '';
+            document.getElementById('valueError').textContent = '';
+            document.getElementById('portError').textContent = '';
+            document.getElementById('protocolNameError').textContent = '';
+            document.getElementById('protocolIdError').textContent = '';
+        }
+
+        document.getElementById('protocolForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            clearErrors();
+            const submitButton = document.getElementById('submitButton');
+            submitButton.disabled = true;
+            const formData = new FormData(e.target);
+            try {
+                const response = await fetch(e.target.action, {
+                    method: 'POST',
+                    body: formData,
+                    headers: { 'X-CSRFToken': formData.get('csrfmiddlewaretoken') }
+                });
+                const result = await response.json();
+                if (result.success) {
+                    const modal = new bootstrap.Modal(document.getElementById('successModal'));
+                    document.getElementById('successMessage').textContent = result.message;
+                    modal.show();
+                    e.target.reset();
+                    toggleFields();
+                    // Reload page to update protocol list
+                    setTimeout(() => window.location.reload(), 1000);
+                } else {
+                    if (result.error.includes('format')) {
+                        document.getElementById('formatError').textContent = result.error;
+                    } else if (result.error.includes('IP') || result.error.includes('hostname') || result.error.includes('port configuration')) {
+                        document.getElementById('valueError').textContent = result.error;
+                    } else if (result.error.includes('Port')) {
+                        document.getElementById('portError').textContent = result.error;
+                    } else if (result.error.includes('protocol name')) {
+                        document.getElementById('protocolNameError').textContent = result.error;
+                    } else if (result.error.includes('Protocol ID')) {
+                        document.getElementById('protocolIdError').textContent = result.error;
+                    } else {
+                        document.getElementById('protocolNameError').textContent = result.error;
+                    }
+                }
+            } catch (error) {
+                document.getElementById('protocolNameError').textContent = `Error: ${error.message}`;
+            } finally {
+                submitButton.disabled = false;
+            }
+        });
+
+        // Handle delete buttons
+        document.querySelectorAll('.delete-protocol').forEach(button => {
+            button.addEventListener('click', () => {
+                const protocol = button.getAttribute('data-protocol');
+                document.getElementById('deleteProtocolName').textContent = protocol;
+                const modal = new bootstrap.Modal(document.getElementById('deleteConfirmModal'));
+                modal.show();
+
+                // Handle confirm delete
+                document.getElementById('confirmDelete').onclick = async () => {
+                    const formData = new FormData();
+                    formData.append('protocol_entry', protocol);
+                    formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
+                    try {
+                        const response = await fetch("{% url 'risk_analysis:delete_protocol' %}", {
+                            method: 'POST',
+                            body: formData
+                        });
+                        const result = await response.json();
+                        if (result.success) {
+                            const modal = new bootstrap.Modal(document.getElementById('successModal'));
+                            document.getElementById('successMessage').textContent = result.message;
+                            modal.show();
+                            setTimeout(() => window.location.reload(), 1000);
+                        } else {
+                            alert(result.error);
+                        }
+                    } catch (error) {
+                        alert(`Error: ${error.message}`);
+                    }
+                    modal.hide();
+                };
+            });
+        });
+    </script>
+</body>
+</html>

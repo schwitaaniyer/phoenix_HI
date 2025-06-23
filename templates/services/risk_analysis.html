@@ -1,0 +1,216 @@
+{% extends "base.html" %}
+
+{% block title %}Risk Analysis{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1>Packet Risk Analysis</h1>
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{% if message.tags == 'success' %}success{% else %}danger{% endif %}">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endif %}
+    <ul class="nav nav-tabs mb-3" id="riskTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="flows-tab" data-bs-toggle="tab" data-bs-target="#flows" type="button" role="tab" aria-controls="flows" aria-selected="true">Packet Flows</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="protocol-tab" data-bs-toggle="tab" data-bs-target="#protocol" type="button" role="tab" aria-controls="protocol" aria-selected="false">Add Custom Protocol</button>
+        </li>
+    </ul>
+    <div class="tab-content" id="riskTabsContent">
+        <div class="tab-pane fade show active" id="flows" role="tabpanel" aria-labelledby="flows-tab">
+            <h3>Control Packet Capture</h3>
+            <div class="mb-4">
+                <button id="startCapture" class="btn btn-success" {% if capture_running %}disabled{% endif %}>Start Capture</button>
+                <button id="stopCapture" class="btn btn-danger" {% if not capture_running %}disabled{% endif %}>Stop Capture</button>
+                <button id="startSessionCapture" class="btn btn-primary">Start Session Capture</button>
+                <button id="stopSessionCapture" class="btn btn-warning" disabled>Stop Session Capture</button>
+            </div>
+            <h3>Filters</h3>
+            <div class="row mb-3">
+                <div class="col-md-3">
+                    <label for="interfaceFilter">Interface:</label>
+                    <select id="interfaceFilter" class="form-select">
+                        {% for iface in interfaces %}
+                            <option value="{{ iface }}" {% if iface == 'ens224' %}selected{% endif %}>{{ iface }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2 align-self-end">
+                    <button id="applyFilter" class="btn btn-primary">Apply Filter</button>
+                </div>
+            </div>
+            <h3>Upload Packet File</h3>
+            <form method="post" enctype="multipart/form-data" class="mb-4">
+                {% csrf_token %}
+                <div class="input-group">
+                    <input type="file" name="packet_file" accept=".json" class="form-control">
+                    <button type="submit" class="btn btn-primary">Analyze</button>
+                </div>
+            </form>
+            <h3>Packet Flows</h3>
+            <table class="table table-striped table-hover mb-4" id="packetTable">
+                <thead>
+                    <tr>
+                        <th>Timestamp</th>
+                        <th>Source</th>
+                        <th>Destination</th>
+                        <th>Protocol</th>
+                        <th>DPI Protocol</th>
+                        <th>Risks</th>
+                    </tr>
+                </thead>
+                <tbody id="packetTableBody">
+                    {% for packet in packets %}
+                    <tr data-packet-id="{{ packet.id }}">
+                        <td>{{ packet.first_seen|date:"Y-m-d H:i:s" }}</td>
+                        <td>{{ packet.source_ip }}:{{ packet.source_port|default:"None" }}</td>
+                        <td>{{ packet.destination_ip }}:{{ packet.destination_port|default:"None" }}</td>
+                        <td>{{ packet.protocol }}</td>
+                        <td>{{ packet.ndpi_protocol }}</td>
+                        <td class="risks-column">
+                            {% for risk in packet.risks %}
+                                <div class="risk-item">
+                                    <span class="risk-name">{{ risk.name }}</span>
+                                    <span class="badge 
+                                        {% if risk.severity|upper == 'HIGH' %}bg-danger
+                                        {% elif risk.severity|upper == 'MEDIUM' %}bg-warning text-dark
+                                        {% elif risk.severity|upper == 'SEVERE' %}bg-dark
+                                        {% else %}bg-success{% endif %}">
+                                        {{ risk.severity }}
+                                    </span>
+                                </div>
+                            {% empty %}
+                                No risks detected
+                            {% endfor %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="6" class="text-center">No packets analyzed yet.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% if severe_alert %}
+            <div class="modal fade" id="severeAlertModal" tabindex="-1" aria-labelledby="severeAlertModalLabel" aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="severeAlertModalLabel">Critical Network Security Alert</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            A packet flow with SEVERE risk has been detected. This indicates a critical security threat, such as potential malware, unauthorized access, or severe protocol violation. Immediate investigation and mitigation are strongly recommended.
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Acknowledge</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+        <div class="tab-pane fade" id="protocol" role="tabpanel" aria-labelledby="protocol-tab">
+            <div class="card mt-3 mb-3">
+                <div class="card-body">
+                    <h3 class="card-title">Add Custom Protocol</h3>
+                    <form id="protocolForm" action="{% url 'services:add_protocol' %}" method="POST">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label for="format" class="form-label">Protocol Format</label>
+                            <select class="form-select" id="format" name="format" onchange="toggleFields()" required>
+                                <option value="" disabled selected>Select a format</option>
+                                <option value="ip">IP-based (e.g., ip:221.171.85.28@MARS)</option>
+                                <option value="port">Port-based (e.g., tcp:81,tcp:8181@HTTP)</option>
+                                <option value="hostname">Hostname-based (e.g., host:'ntop.org'@ntop)</option>
+                                <option value="ip_hostname">IP/Hostname (e.g., ip:www.ntop.org@ntop)</option>
+                                <option value="ipv6">IPv6-based (e.g., ipv6:[fe80::1]@Custom)</option>
+                            </select>
+                            <div id="formatError" class="error-message"></div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="value" class="form-label">Value (e.g., IP, Port, Hostname)</label>
+                            <input type="text" class="form-control" id="value" name="value" placeholder="e.g., 221.171.85.28 or tcp:81,tcp:8181 or ntop.org" required>
+                            <div id="valueError" class="error-message"></div>
+                        </div>
+                        <div class="mb-3" id="portFields" style="display:none;">
+                            <label for="port" class="form-label">Port (optional, for IP or IPv6)</label>
+                            <input type="text" class="form-control" id="port" name="port" placeholder="e.g., 443">
+                            <div id="portError" class="error-message"></div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="protocol_name" class="form-label">Protocol Name</label>
+                            <input type="text" class="form-control" id="protocol_name" name="protocol_name" placeholder="e.g., MARS" required>
+                            <div id="protocolNameError" class="error-message"></div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="protocol_id" class="form-label">Protocol ID (optional, 1-65535)</label>
+                            <input type="number" class="form-control" id="protocol_id" name="protocol_id" min="1" max="65535" placeholder="e.g., 800">
+                            <div id="protocolIdError" class="error-message"></div>
+                        </div>
+                        <button type="submit" class="btn btn-primary" id="submitButton">Add Protocol</button>
+                    </form>
+                </div>
+            </div>
+            <div class="table-section mb-4">
+                <h3>Existing Protocols</h3>
+                {% if protocols %}
+                    <table class="table table-bordered mb-4">
+                        <thead>
+                            <tr>
+                                <th>Protocol</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for protocol in protocols %}
+                                <tr>
+                                    <td>{{ protocol }}</td>
+                                    <td>
+                                        <button class="btn btn-danger btn-sm delete-protocol" data-protocol="{{ protocol }}">Delete</button>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                {% else %}
+                    <p>No custom protocols found.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% if severe_alert %}
+    <div class="modal fade" id="severeAlertModal" tabindex="-1" aria-labelledby="severeAlertModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="severeAlertModalLabel">Critical Network Security Alert</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    A packet flow with SEVERE risk has been detected. This indicates a critical security threat, such as potential malware, unauthorized access, or severe protocol violation. Immediate investigation and mitigation are strongly recommended.
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Acknowledge</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+<script>
+    function toggleFields() {
+        const format = document.getElementById('format').value;
+        document.getElementById('portFields').style.display = (format === 'ip' || format === 'ipv6') ? 'block' : 'none';
+    }
+    document.addEventListener('DOMContentLoaded', function() {
+        const hasSevereAlert = {% if severe_alert %}true{% else %}false{% endif %};
+        if (hasSevereAlert) {
+            var severeModal = new bootstrap.Modal(document.getElementById('severeAlertModal'));
+            severeModal.show();
+        }
+    });
+</script>
+{% endblock %}

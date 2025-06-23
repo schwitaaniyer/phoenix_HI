@@ -1,0 +1,515 @@
+{% extends "base.html" %}
+{% load crispy_forms_tags %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block extra_css %}
+<link href="https://cdn.jsdelivr.net/npm/chart.js@3.7.0/dist/chart.min.css" rel="stylesheet">
+<style>
+    .metric-card {
+        transition: transform 0.2s;
+    }
+    .metric-card:hover {
+        transform: translateY(-5px);
+    }
+    .chart-container {
+        position: relative;
+        height: 300px;
+        margin-bottom: 1rem;
+    }
+    .system-status {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    .status-indicator {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+    }
+    .status-up { background-color: #28a745; }
+    .status-down { background-color: #dc3545; }
+    .status-warning { background-color: #ffc107; }
+    .bg-purple { background-color: #6f42c1; }
+    .bg-indigo { background-color: #4e73df; }
+    .bg-teal { background-color: #20c997; }
+    .bg-orange { background-color: #fd7e14; }
+    .small-text {
+        font-size: 0.8rem;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 100%;
+        display: inline-block;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h4>SD-WAN Overview</h4>
+                <div class="system-status">
+                    <div class="status-indicator status-up"></div>
+                    <span>System Status: Operational</span>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3">
+                        <div class="card bg-primary text-white mb-3 metric-card">
+                            <div class="card-body">
+                                <h5 class="card-title">Interfaces</h5>
+                                <p class="card-text display-6" id="interfacesCount">{{ interfaces_count }}</p>
+                                <small>Active: <span id="activeInterfaces">0</span></small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card bg-success text-white mb-3 metric-card">
+                            <div class="card-body">
+                                <h5 class="card-title">Active Tunnels</h5>
+                                <p class="card-text display-6" id="tunnelsCount">{{ tunnels_count }}</p>
+                                <small>Healthy: <span id="healthyTunnels">0</span></small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card bg-info text-white mb-3 metric-card">
+                            <div class="card-body">
+                                <h5 class="card-title">Throughput</h5>
+                                <p class="card-text display-6" id="throughput">{{ throughput }}</p>
+                                <small>Peak: <span id="peakThroughput">0</span> Mbps</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card bg-warning text-white mb-3 metric-card">
+                            <div class="card-body">
+                                <h5 class="card-title">CPU Usage</h5>
+                                <p class="card-text display-6" id="cpuUsage">0%</p>
+                                <small>Load: <span id="cpuLoad">0</span></small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-3">
+                        <div class="card bg-purple text-white mb-3 metric-card">
+                            <div class="card-body">
+                                <h5 class="card-title">Bandwidth</h5>
+                                <p class="card-text display-6" id="bandwidth">0</p>
+                                <small>Total: <span id="totalBandwidth">0</span> Gbps</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card bg-indigo text-white mb-3 metric-card">
+                            <div class="card-body">
+                                <h5 class="card-title">Memory Usage</h5>
+                                <p class="card-text display-6" id="memoryUsage">0%</p>
+                                <small>Used: <span id="memoryUsed">0</span> GB</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card bg-teal text-white mb-3 metric-card">
+                            <div class="card-body">
+                                <h5 class="card-title">Uptime</h5>
+                                <p class="card-text display-6" id="uptime">0d</p>
+                                <small>Last Boot: <span id="lastBoot" class="small-text">-</span></small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card bg-orange text-white mb-3 metric-card">
+                            <div class="card-body">
+                                <h5 class="card-title">Traffic</h5>
+                                <p class="card-text display-6" id="totalTraffic">0</p>
+                                <small>Today: <span id="todayTraffic">0</span> GB</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h4>Network Interfaces</h4>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Interface</th>
+                                <th>Status</th>
+                                <th>IP Address</th>
+                                <th>Speed</th>
+                                <th>Traffic</th>
+                            </tr>
+                        </thead>
+                        <tbody id="interfacesTable">
+                            <!-- Will be populated by JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h4>Active Tunnels</h4>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Tunnel</th>
+                                <th>Status</th>
+                                <th>Local</th>
+                                <th>Remote</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tunnelsTable">
+                            <!-- Will be populated by JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h4>Network Traffic</h4>
+            </div>
+            <div class="card-body">
+                <div class="chart-container">
+                    <canvas id="trafficChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h4>System Resources</h4>
+            </div>
+            <div class="card-body">
+                <div class="chart-container">
+                    <canvas id="resourcesChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-12">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h4>Network Health</h4>
+            </div>
+            <div class="card-body">
+                <div class="chart-container">
+                    <canvas id="healthChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.0/dist/chart.min.js"></script>
+<script>
+// Initialize charts
+const trafficCtx = document.getElementById('trafficChart').getContext('2d');
+const resourcesCtx = document.getElementById('resourcesChart').getContext('2d');
+const healthCtx = document.getElementById('healthChart').getContext('2d');
+
+const trafficChart = new Chart(trafficCtx, {
+    type: 'line',
+    data: {
+        labels: [],
+        datasets: [{
+            label: 'Inbound Traffic (Mbps)',
+            data: [],
+            borderColor: 'rgb(75, 192, 192)',
+            tension: 0.4,
+            fill: false,
+            borderWidth: 2,
+            pointRadius: 0,
+            pointHoverRadius: 4
+        }, {
+            label: 'Outbound Traffic (Mbps)',
+            data: [],
+            borderColor: 'rgb(255, 99, 132)',
+            tension: 0.4,
+            fill: false,
+            borderWidth: 2,
+            pointRadius: 0,
+            pointHoverRadius: 4
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        animation: {
+            duration: 750,
+            easing: 'easeInOutQuart'
+        },
+        interaction: {
+            intersect: false,
+            mode: 'index'
+        },
+        scales: {
+            y: {
+                beginAtZero: true,
+                grid: {
+                    color: 'rgba(0, 0, 0, 0.1)'
+                }
+            },
+            x: {
+                grid: {
+                    display: false
+                }
+            }
+        },
+        plugins: {
+            legend: {
+                position: 'top'
+            }
+        }
+    }
+});
+
+const resourcesChart = new Chart(resourcesCtx, {
+    type: 'line',
+    data: {
+        labels: [],
+        datasets: [{
+            label: 'CPU Usage (%)',
+            data: [],
+            borderColor: 'rgb(255, 99, 132)',
+            tension: 0.4,
+            fill: false,
+            borderWidth: 2,
+            pointRadius: 0,
+            pointHoverRadius: 4
+        }, {
+            label: 'Memory Usage (%)',
+            data: [],
+            borderColor: 'rgb(54, 162, 235)',
+            tension: 0.4,
+            fill: false,
+            borderWidth: 2,
+            pointRadius: 0,
+            pointHoverRadius: 4
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        animation: {
+            duration: 750,
+            easing: 'easeInOutQuart'
+        },
+        interaction: {
+            intersect: false,
+            mode: 'index'
+        },
+        scales: {
+            y: {
+                beginAtZero: true,
+                max: 100,
+                grid: {
+                    color: 'rgba(0, 0, 0, 0.1)'
+                }
+            },
+            x: {
+                grid: {
+                    display: false
+                }
+            }
+        },
+        plugins: {
+            legend: {
+                position: 'top'
+            }
+        }
+    }
+});
+
+const healthChart = new Chart(healthCtx, {
+    type: 'doughnut',
+    data: {
+        labels: ['Healthy', 'Warning', 'Critical'],
+        datasets: [{
+            data: [0, 0, 0],
+            backgroundColor: [
+                'rgb(40, 167, 69)',
+                'rgb(255, 193, 7)',
+                'rgb(220, 53, 69)'
+            ],
+            borderWidth: 0
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        animation: {
+            duration: 750,
+            easing: 'easeInOutQuart'
+        },
+        plugins: {
+            legend: {
+                position: 'top'
+            }
+        },
+        cutout: '70%'
+    }
+});
+
+// Function to format bytes to human readable format
+function formatBytes(bytes, decimals = 2) {
+    if (bytes === 0) return '0 B';
+    const k = 1024;
+    const dm = decimals < 0 ? 0 : decimals;
+    const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+}
+
+// Function to format uptime
+function formatUptime(seconds) {
+    const days = Math.floor(seconds / (3600 * 24));
+    const hours = Math.floor((seconds % (3600 * 24)) / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    
+    if (days > 0) return `${days}d ${hours}h`;
+    if (hours > 0) return `${hours}h ${minutes}m`;
+    return `${minutes}m`;
+}
+
+// Function to format date
+function formatDate(date) {
+    return new Date(date).toLocaleString();
+}
+
+// Function to update metrics
+function updateMetrics() {
+    fetch('/dashboard/api/metrics/')
+        .then(response => response.json())
+        .then(data => {
+            // Update counters
+            document.getElementById('interfacesCount').textContent = data.interfaces_count;
+            document.getElementById('activeInterfaces').textContent = data.active_interfaces;
+            document.getElementById('tunnelsCount').textContent = data.tunnels_count;
+            document.getElementById('healthyTunnels').textContent = data.healthy_tunnels;
+            document.getElementById('throughput').textContent = data.throughput + ' Mbps';
+            document.getElementById('peakThroughput').textContent = data.peak_throughput;
+            document.getElementById('cpuUsage').textContent = data.cpu_usage + '%';
+            document.getElementById('cpuLoad').textContent = data.cpu_load;
+
+            // Update new counters
+            document.getElementById('bandwidth').textContent = data.bandwidth + ' Mbps';
+            document.getElementById('totalBandwidth').textContent = data.total_bandwidth + ' Gbps';
+            document.getElementById('memoryUsage').textContent = data.memory_usage + '%';
+            document.getElementById('memoryUsed').textContent = data.memory_used;
+            document.getElementById('uptime').textContent = formatUptime(data.uptime);
+            document.getElementById('lastBoot').textContent = data.last_boot;
+            document.getElementById('totalTraffic').textContent = formatBytes(data.total_traffic);
+            document.getElementById('todayTraffic').textContent = formatBytes(data.today_traffic);
+
+            // Update interfaces table
+            const interfacesTable = document.getElementById('interfacesTable');
+            interfacesTable.innerHTML = data.interfaces.map(iface => `
+                <tr>
+                    <td>${iface.name}</td>
+                    <td>
+                        <span class="badge bg-${iface.status === 'up' ? 'success' : 'danger'}">
+                            ${iface.status}
+                        </span>
+                    </td>
+                    <td>${iface.ip || '-'}</td>
+                    <td>${iface.speed ? iface.speed + ' Mbps' : '-'}</td>
+                    <td>
+                        <small>
+                            ↓ ${formatBytes(iface.rx_bytes)}<br>
+                            ↑ ${formatBytes(iface.tx_bytes)}
+                        </small>
+                    </td>
+                </tr>
+            `).join('');
+
+            // Update tunnels table
+            const tunnelsTable = document.getElementById('tunnelsTable');
+            tunnelsTable.innerHTML = data.tunnels.map(tunnel => `
+                <tr>
+                    <td>${tunnel.name}</td>
+                    <td>
+                        <span class="badge bg-${tunnel.status === 'up' ? 'success' : 'danger'}">
+                            ${tunnel.status}
+                        </span>
+                    </td>
+                    <td>${tunnel.local || '-'}</td>
+                    <td>${tunnel.remote || '-'}</td>
+                </tr>
+            `).join('');
+
+            // Update charts
+            const now = new Date().toLocaleTimeString();
+            
+            // Update traffic chart
+            trafficChart.data.labels.push(now);
+            trafficChart.data.datasets[0].data.push(data.inbound_traffic);
+            trafficChart.data.datasets[1].data.push(data.outbound_traffic);
+            if (trafficChart.data.labels.length > 10) {
+                trafficChart.data.labels.shift();
+                trafficChart.data.datasets[0].data.shift();
+                trafficChart.data.datasets[1].data.shift();
+            }
+            trafficChart.update();
+
+            // Update resources chart
+            resourcesChart.data.labels.push(now);
+            resourcesChart.data.datasets[0].data.push(data.cpu_usage);
+            resourcesChart.data.datasets[1].data.push(data.memory_usage);
+            if (resourcesChart.data.labels.length > 10) {
+                resourcesChart.data.labels.shift();
+                resourcesChart.data.datasets[0].data.shift();
+                resourcesChart.data.datasets[1].data.shift();
+            }
+            resourcesChart.update();
+
+            // Update health chart
+            healthChart.data.datasets[0].data = [
+                data.healthy_components,
+                data.warning_components,
+                data.critical_components
+            ];
+            healthChart.update();
+        })
+        .catch(error => console.error('Error fetching metrics:', error));
+}
+
+// Update metrics every 2 seconds
+setInterval(updateMetrics, 2000);
+// Initial update
+updateMetrics();
+</script>
+{% endblock %}

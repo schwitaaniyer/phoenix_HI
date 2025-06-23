@@ -1,0 +1,374 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}MPTCP Management{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <!-- MPTCP Endpoints Section -->
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">MPTCP Endpoints</h5>
+                </div>
+                <div class="card-body">
+                    <form id="endpointForm" class="mb-4">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label for="ifaddr" class="form-label">IP Address</label>
+                                <input type="text" class="form-control" id="ifaddr" name="ifaddr" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="port" class="form-label">Port (optional)</label>
+                                <input type="number" class="form-control" id="port" name="port" min="1" max="65535">
+                            </div>
+                            <div class="col-md-6">
+                                <label for="dev" class="form-label">Interface</label>
+                                <input type="text" class="form-control" id="dev" name="dev" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="id" class="form-label">ID (1-255)</label>
+                                <input type="number" class="form-control" id="id" name="id" min="1" max="255" required>
+                            </div>
+                            <div class="col-12">
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="checkbox" id="signal" name="signal">
+                                    <label class="form-check-label" for="signal">Signal</label>
+                                </div>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="checkbox" id="subflow" name="subflow">
+                                    <label class="form-check-label" for="subflow">Subflow</label>
+                                </div>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="checkbox" id="backup" name="backup">
+                                    <label class="form-check-label" for="backup">Backup</label>
+                                </div>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="checkbox" id="fullmesh" name="fullmesh">
+                                    <label class="form-check-label" for="fullmesh">Fullmesh</label>
+                                </div>
+                            </div>
+                            <div class="col-12">
+                                <button type="submit" class="btn btn-primary">Add Endpoint</button>
+                            </div>
+                        </div>
+                    </form>
+                    <div id="endpointsList" class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>IP Address</th>
+                                    <th>Port</th>
+                                    <th>Interface</th>
+                                    <th>Flags</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="endpointsTableBody">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- MPTCP Limits Section -->
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">MPTCP Limits</h5>
+                </div>
+                <div class="card-body">
+                    <form id="limitsForm" class="mb-4">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label for="subflow" class="form-label">Max Subflows</label>
+                                <input type="number" class="form-control" id="subflow" name="subflow" min="0">
+                            </div>
+                            <div class="col-md-6">
+                                <label for="add_addr" class="form-label">Max ADD_ADDR Accepted</label>
+                                <input type="number" class="form-control" id="add_addr" name="add_addr" min="0">
+                            </div>
+                            <div class="col-12">
+                                <button type="submit" class="btn btn-primary">Set Limits</button>
+                            </div>
+                        </div>
+                    </form>
+                    <div id="currentLimits" class="alert alert-info">
+                        Loading current limits...
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- MPTCP Monitor Section -->
+        <div class="col-12 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">MPTCP Monitor</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <button id="startMonitor" class="btn btn-success">Start Monitoring</button>
+                        <button id="stopMonitor" class="btn btn-danger" disabled>Stop Monitoring</button>
+                    </div>
+                    <div id="monitorOutput" class="bg-dark text-light p-3 rounded" style="height: 300px; overflow-y: auto;">
+                        <pre class="mb-0" id="monitorContent"></pre>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Endpoint Modal -->
+<div class="modal fade" id="editEndpointModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Edit MPTCP Endpoint</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="editEndpointForm">
+                    <input type="hidden" id="editId">
+                    <div class="mb-3">
+                        <label for="editIfaddr" class="form-label">IP Address</label>
+                        <input type="text" class="form-control" id="editIfaddr" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="editPort" class="form-label">Port (optional)</label>
+                        <input type="number" class="form-control" id="editPort" min="1" max="65535">
+                    </div>
+                    <div class="mb-3">
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="checkbox" id="editBackup">
+                            <label class="form-check-label" for="editBackup">Backup</label>
+                        </div>
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="checkbox" id="editFullmesh">
+                            <label class="form-check-label" for="editFullmesh">Fullmesh</label>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" id="saveEndpointChanges">Save changes</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Load initial data
+    loadEndpoints();
+    loadLimits();
+
+    // Endpoint form submission
+    document.getElementById('endpointForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const formData = new FormData(this);
+        const flags = [];
+        if (formData.get('signal')) flags.push('signal');
+        if (formData.get('subflow')) flags.push('subflow');
+        if (formData.get('backup')) flags.push('backup');
+        if (formData.get('fullmesh')) flags.push('fullmesh');
+
+        fetch('/network/mptcp/endpoint/add/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: JSON.stringify({
+                ifaddr: formData.get('ifaddr'),
+                port: formData.get('port') || null,
+                dev: formData.get('dev'),
+                id: formData.get('id'),
+                flags: flags
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                loadEndpoints();
+                this.reset();
+            } else {
+                alert('Error: ' + data.error);
+            }
+        });
+    });
+
+    // Limits form submission
+    document.getElementById('limitsForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const formData = new FormData(this);
+        fetch('/network/mptcp/limits/set/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: JSON.stringify({
+                subflow: formData.get('subflow'),
+                add_addr: formData.get('add_addr')
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                loadLimits();
+            } else {
+                alert('Error: ' + data.error);
+            }
+        });
+    });
+
+    // Monitor controls
+    let monitorInterval;
+    document.getElementById('startMonitor').addEventListener('click', function() {
+        this.disabled = true;
+        document.getElementById('stopMonitor').disabled = false;
+        monitorInterval = setInterval(updateMonitor, 1000);
+    });
+
+    document.getElementById('stopMonitor').addEventListener('click', function() {
+        this.disabled = true;
+        document.getElementById('startMonitor').disabled = false;
+        clearInterval(monitorInterval);
+    });
+
+    // Edit endpoint modal
+    const editModal = new bootstrap.Modal(document.getElementById('editEndpointModal'));
+    document.getElementById('saveEndpointChanges').addEventListener('click', function() {
+        const id = document.getElementById('editId').value;
+        const ifaddr = document.getElementById('editIfaddr').value;
+        const port = document.getElementById('editPort').value;
+        const backup = document.getElementById('editBackup').checked;
+        const fullmesh = document.getElementById('editFullmesh').checked;
+
+        fetch(`/network/mptcp/endpoint/${id}/change/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: JSON.stringify({
+                ifaddr: ifaddr,
+                port: port || null,
+                backup: backup,
+                fullmesh: fullmesh
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                editModal.hide();
+                loadEndpoints();
+            } else {
+                alert('Error: ' + data.error);
+            }
+        });
+    });
+});
+
+function loadEndpoints() {
+    fetch('/network/mptcp/endpoint/show/')
+        .then(response => response.json())
+        .then(data => {
+            const tbody = document.getElementById('endpointsTableBody');
+            tbody.innerHTML = '';
+            data.endpoints.forEach(endpoint => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${endpoint.id}</td>
+                    <td>${endpoint.ifaddr}</td>
+                    <td>${endpoint.port || '-'}</td>
+                    <td>${endpoint.dev}</td>
+                    <td>${endpoint.flags.join(', ')}</td>
+                    <td>
+                        <button class="btn btn-sm btn-primary" onclick="editEndpoint(${endpoint.id})">Edit</button>
+                        <button class="btn btn-sm btn-danger" onclick="deleteEndpoint(${endpoint.id})">Delete</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        });
+}
+
+function loadLimits() {
+    fetch('/network/mptcp/limits/show/')
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById('currentLimits').innerHTML = `
+                <strong>Current Limits:</strong><br>
+                Max Subflows: ${data.subflow}<br>
+                Max ADD_ADDR Accepted: ${data.add_addr}
+            `;
+        });
+}
+
+function updateMonitor() {
+    fetch('/network/mptcp/monitor/')
+        .then(response => response.json())
+        .then(data => {
+            const monitorContent = document.getElementById('monitorContent');
+            monitorContent.textContent = data.output;
+            monitorContent.scrollTop = monitorContent.scrollHeight;
+        });
+}
+
+function editEndpoint(id) {
+    fetch(`/network/mptcp/endpoint/${id}/show/`)
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById('editId').value = id;
+            document.getElementById('editIfaddr').value = data.ifaddr;
+            document.getElementById('editPort').value = data.port || '';
+            document.getElementById('editBackup').checked = data.flags.includes('backup');
+            document.getElementById('editFullmesh').checked = data.flags.includes('fullmesh');
+            editModal.show();
+        });
+}
+
+function deleteEndpoint(id) {
+    if (confirm('Are you sure you want to delete this endpoint?')) {
+        fetch(`/network/mptcp/endpoint/${id}/delete/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken')
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                loadEndpoints();
+            } else {
+                alert('Error: ' + data.error);
+            }
+        });
+    }
+}
+
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+</script>
+{% endblock %} 

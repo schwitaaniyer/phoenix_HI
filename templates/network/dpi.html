@@ -1,0 +1,187 @@
+{% extends "base.html" %}
+{% load crispy_forms_tags %}
+
+{% block title %}Deep Packet Inspection{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-6">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h4>DPI Configuration</h4>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    <input type="hidden" name="form_type" value="dpi_config">
+                    {{ config_form|crispy }}
+                    <button type="submit" class="btn btn-primary">Save Configuration</button>
+                </form>
+            </div>
+        </div>
+        
+        <div class="card mb-4">
+            <div class="card-header">
+                <h4>Application Protocols</h4>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Protocol</th>
+                                <th>Category</th>
+                                <th>Risk</th>
+                                <th>Enabled</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for protocol in protocols %}
+                            <tr>
+                                <td>{{ protocol.name }}</td>
+                                <td>{{ protocol.category }}</td>
+                                <td>
+                                    <span class="badge bg-{% if protocol.risk == 'high' %}danger{% elif protocol.risk == 'medium' %}warning{% else %}success{% endif %}">
+                                        {{ protocol.risk }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input protocol-toggle" 
+                                               type="checkbox" 
+                                               data-protocol-id="{{ protocol.id }}"
+                                               {% if protocol.enabled %}checked{% endif %}>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="4" class="text-center">No protocols loaded</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h4>DPI Statistics</h4>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Protocol</th>
+                                <th>Packets</th>
+                                <th>Bytes</th>
+                                <th>Flows</th>
+                                <th>% of Total</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for stat in stats %}
+                            <tr>
+                                <td>{{ stat.protocol }}</td>
+                                <td>{{ stat.packets }}</td>
+                                <td>{{ stat.bytes|filesizeformat }}</td>
+                                <td>{{ stat.flows }}</td>
+                                <td>
+                                    <div class="progress">
+                                        <div class="progress-bar" 
+                                             role="progressbar" 
+                                             style="width: {{ stat.percent }}%" 
+                                             aria-valuenow="{{ stat.percent }}" 
+                                             aria-valuemin="0" 
+                                             aria-valuemax="100">
+                                            {{ stat.percent }}%
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="5" class="text-center">No statistics available</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card">
+            <div class="card-header">
+                <h4>Recent Flows</h4>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Time</th>
+                                <th>Source</th>
+                                <th>Destination</th>
+                                <th>Protocol</th>
+                                <th>Duration</th>
+                                <th>Bytes</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for flow in flows %}
+                            <tr>
+                                <td>{{ flow.time }}</td>
+                                <td>{{ flow.source }}</td>
+                                <td>{{ flow.destination }}</td>
+                                <td>{{ flow.protocol }}</td>
+                                <td>{{ flow.duration }}</td>
+                                <td>{{ flow.bytes|filesizeformat }}</td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="6" class="text-center">No recent flows detected</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+// Protocol toggle
+document.querySelectorAll('.protocol-toggle').forEach(checkbox => {
+    checkbox.addEventListener('change', function() {
+        const protocolId = this.dataset.protocolId;
+        const enabled = this.checked;
+        
+        fetch('/network/dpi/toggle-protocol/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token }}',
+            },
+            body: JSON.stringify({
+                protocol_id: protocolId,
+                enabled: enabled
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (!data.success) {
+                this.checked = !this.checked;
+                alert('Error toggling protocol: ' + data.error);
+            }
+        });
+    });
+});
+</script>
+{% endblock %}
+{% endblock %}

@@ -1,0 +1,319 @@
+{% extends "base.html" %}
+{% load crispy_forms_tags %}
+
+{% block title %}IPS/IDS Configuration{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-6">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h4>IPS/IDS Configuration</h4>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    <input type="hidden" name="form_type" value="ips_config">
+                    {{ config_form|crispy }}
+                    <button type="submit" class="btn btn-primary">Save Configuration</button>
+                </form>
+            </div>
+        </div>
+        
+        <div class="card mb-4">
+            <div class="card-header">
+                <h4>IPS/IDS Service Control</h4>
+            </div>
+            <div class="card-body">
+                <div class="btn-group w-100">
+                    <button class="btn btn-primary" id="startSnort">Start Snort</button>
+                    <button class="btn btn-warning" id="restartSnort">Restart Snort</button>
+                    <button class="btn btn-danger" id="stopSnort">Stop Snort</button>
+                </div>
+                <div class="mt-3">
+                    <h5>Service Status</h5>
+                    <pre>{{ service_status }}</pre>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card">
+            <div class="card-header">
+                <h4>Rule Management</h4>
+            </div>
+            <div class="card-body">
+                <form method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <input type="hidden" name="form_type" value="upload_rules">
+                    <div class="mb-3">
+                        <label for="ruleFile" class="form-label">Rule File</label>
+                        <input class="form-control" type="file" id="ruleFile" name="rule_file" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Upload Rules</button>
+                </form>
+                <hr>
+                <button class="btn btn-secondary" id="downloadRules">Download Current Rules</button>
+                <button class="btn btn-outline-danger" id="restoreDefaultRules">Restore Default Rules</button>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h4>IPS/IDS Rules</h4>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Action</th>
+                                <th>Protocol</th>
+                                <th>Source</th>
+                                <th>Destination</th>
+                                <th>Message</th>
+                                <th>Enabled</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for rule in rules %}
+                            <tr>
+                                <td>{{ rule.sid }}</td>
+                                <td>{{ rule.action }}</td>
+                                <td>{{ rule.protocol }}</td>
+                                <td>{{ rule.source }}</td>
+                                <td>{{ rule.destination }}</td>
+                                <td>{{ rule.message }}</td>
+                                <td>
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input rule-toggle" 
+                                               type="checkbox" 
+                                               data-rule-id="{{ rule.sid }}"
+                                               {% if rule.enabled %}checked{% endif %}>
+                                    </div>
+                                </td>
+                                <td>
+                                    <button class="btn btn-sm btn-primary" 
+                                            data-bs-toggle="modal" 
+                                            data-bs-target="#editRuleModal"
+                                            data-rule-id="{{ rule.sid }}"
+                                            data-rule-action="{{ rule.action }}"
+                                            data-rule-protocol="{{ rule.protocol }}"
+                                            data-rule-source="{{ rule.source }}"
+                                            data-rule-destination="{{ rule.destination }}"
+                                            data-rule-message="{{ rule.message }}">
+                                        Edit
+                                    </button>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="8" class="text-center">No rules loaded</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card">
+            <div class="card-header">
+                <h4>Recent Alerts</h4>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Timestamp</th>
+                                <th>Priority</th>
+                                <th>Source</th>
+                                <th>Destination</th>
+                                <th>Message</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for alert in alerts %}
+                            <tr>
+                                <td>{{ alert.timestamp }}</td>
+                                <td>
+                                    <span class="badge bg-{% if alert.priority == 'high' %}danger{% elif alert.priority == 'medium' %}warning{% else %}info{% endif %}">
+                                        {{ alert.priority }}
+                                    </span>
+                                </td>
+                                <td>{{ alert.source }}</td>
+                                <td>{{ alert.destination }}</td>
+                                <td>{{ alert.message }}</td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="5" class="text-center">No alerts detected</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Rule Modal -->
+<div class="modal fade" id="editRuleModal" tabindex="-1" aria-labelledby="editRuleModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editRuleModalLabel">Edit IPS/IDS Rule</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="editRuleForm" method="post">
+                <div class="modal-body">
+                    {% csrf_token %}
+                    <input type="hidden" name="form_type" value="edit_rule">
+                    <input type="hidden" id="editRuleId" name="rule_id">
+                    {{ rule_form|crispy }}
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="submit" class="btn btn-primary">Update Rule</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+// Snort service operations
+document.getElementById('startSnort').addEventListener('click', function() {
+    if (confirm('Are you sure you want to start Snort service?')) {
+        fetch('/services/ips_ids/start/', {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Snort service started successfully');
+                location.reload();
+            } else {
+                alert('Error starting Snort: ' + data.error);
+            }
+        });
+    }
+});
+
+document.getElementById('restartSnort').addEventListener('click', function() {
+    if (confirm('Are you sure you want to restart Snort service?')) {
+        fetch('/services/ips_ids/restart/', {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Snort service restarted successfully');
+                location.reload();
+            } else {
+                alert('Error restarting Snort: ' + data.error);
+            }
+        });
+    }
+});
+
+document.getElementById('stopSnort').addEventListener('click', function() {
+    if (confirm('Are you sure you want to stop Snort service?')) {
+        fetch('/services/ips_ids/stop/', {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Snort service stopped successfully');
+                location.reload();
+            } else {
+                alert('Error stopping Snort: ' + data.error);
+            }
+        });
+    }
+});
+
+// Rule operations
+document.querySelectorAll('.rule-toggle').forEach(checkbox => {
+    checkbox.addEventListener('change', function() {
+        const ruleId = this.dataset.ruleId;
+        const enabled = this.checked;
+        
+        fetch('/services/ips_ids/toggle-rule/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token }}',
+            },
+            body: JSON.stringify({
+                rule_id: ruleId,
+                enabled: enabled
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (!data.success) {
+                this.checked = !this.checked;
+                alert('Error toggling rule: ' + data.error);
+            }
+        });
+    });
+});
+
+// Download rules
+document.getElementById('downloadRules').addEventListener('click', function() {
+    window.location.href = '/services/ips_ids/download-rules/';
+});
+
+// Restore default rules
+document.getElementById('restoreDefaultRules').addEventListener('click', function() {
+    if (confirm('Are you sure you want to restore default rules?')) {
+        fetch('/services/ips_ids/restore-default-rules/', {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Default rules restored successfully');
+                location.reload();
+            } else {
+                alert('Error restoring default rules: ' + data.error);
+            }
+        });
+    }
+});
+
+// Edit rule modal setup
+document.getElementById('editRuleModal').addEventListener('show.bs.modal', function(event) {
+    const button = event.relatedTarget;
+    const modal = this;
+    
+    modal.querySelector('#editRuleId').value = button.dataset.ruleId;
+    modal.querySelector('#id_action').value = button.dataset.ruleAction;
+    modal.querySelector('#id_protocol').value = button.dataset.ruleProtocol;
+    modal.querySelector('#id_source').value = button.dataset.ruleSource;
+    modal.querySelector('#id_destination').value = button.dataset.ruleDestination;
+    modal.querySelector('#id_message').value = button.dataset.ruleMessage;
+});
+</script>
+{% endblock %}
+{% endblock %}

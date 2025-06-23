@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LTE Switching Analysis</title>
+    <link rel="stylesheet" href="/static/css/common.css">
+    <style>
+        :root {
+            --bg-dark: #1a252f;
+            --bg-medium: #2c3e50;
+            --bg-light: #34495e;
+            --text-light: #ecf0f1;
+            --border-color: #7f8c8d;
+            --accent-color: #2980b9;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: var(--bg-medium);
+            color: var(--text-light);
+            line-height: 1.6;
+            margin: 0;
+            padding: 0;
+        }
+
+        nav {
+            background: var(--bg-dark);
+            color: var(--text-light);
+            padding: 15px;
+            text-align: center;
+            font-size: 20px;
+            font-weight: bold;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+
+        .content {
+            width: 90%;
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 20px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            background: var(--bg-light);
+            color: var(--text-light);
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        td, th {
+            padding: 12px;
+            text-align: center;
+            border-bottom: 1px solid var(--border-color);
+            transition: background-color 0.3s ease;
+        }
+
+        th {
+            background: var(--bg-dark);
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        tbody tr:nth-child(odd) {
+            background: #3d566e;
+        }
+
+        tbody tr:nth-child(even) {
+            background: var(--bg-medium);
+        }
+
+        tbody tr:hover {
+            background-color: rgba(255,255,255,0.1);
+        }
+
+        h3 {
+            background: var(--bg-dark);
+            padding: 12px;
+            color: var(--text-light);
+            text-align: left;
+            border-radius: 5px;
+            margin-top: 30px;
+            font-weight: 600;
+            letter-spacing: 1px;
+        }
+
+        .view-all-btn {
+            background: var(--accent-color);
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            margin-top: 10px;
+            cursor: pointer;
+            border-radius: 5px;
+            transition: background-color 0.3s ease;
+            display: block;
+            width: 200px;
+            margin: 15px 0;
+            text-align: left;
+        }
+
+        .view-all-btn:hover {
+            background: #1f6690;
+        }
+
+        .hidden-row {
+            display: none;
+        }
+
+        /* Network Status Styles */
+        .network-status-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            margin-top: 20px;
+            padding-bottom: 30px; /* Added extra spacing at the bottom */
+        }
+
+        .lte-status-card {
+            background-color: #34495e;
+            border-radius: 8px;
+            padding: 15px;
+            width: calc(50% - 10px);
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease;
+        }
+
+        .lte-status-card:hover {
+            transform: scale(1.02);
+        }
+
+        .lte-status-header {
+            background-color: #1a252f;
+            color: #ecf0f1;
+            text-align: center;
+            padding: 10px;
+            border-radius: 4px 4px 0 0;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .lte-status-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .lte-status-content .metric {
+            display: flex;
+            justify-content: space-between;
+            padding: 5px 0;
+            border-bottom: 1px solid #7f8c8d;
+        }
+
+        .lte-status-content .metric-name {
+            font-weight: 500;
+            color: #ecf0f1;
+        }
+
+        .lte-status-content .metric-value {
+            color: #2ecc71;
+            text-align: right;
+        }
+
+        @media (max-width: 768px) {
+            .lte-status-card, 
+            .view-all-btn {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <nav>
+        LTE Switching Analysis
+    </nav>
+
+    <div class="content">
+        <!-- RF Parameters Table -->
+        <h3>RF Parameters (Real-Time)</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Timestamp</th>
+                    <th>LTE Type</th>
+                    <th>RSRP</th>
+                    <th>RSRP Index</th>
+                    <th>RSRQ</th>
+                    <th>RSRQ Index</th>
+                    <th>SINR</th>
+                    <th>LQI</th>
+                    <th>Link Condition</th>
+                </tr>
+            </thead>
+            <tbody id="rf-parameters">
+                {% for row in rf_data %}
+                <tr {% if forloop.counter0 >= 2 %}class="hidden-row"{% endif %}>
+                    <td>{{ row.timestamp }}</td>
+                    <td>{{ row.lte_type }}</td>
+                    <td>{{ row.rsrp }}</td>
+                    <td>{{ row.rsrp_index }}</td>
+                    <td>{{ row.rsrq }}</td>
+                    <td>{{ row.rsrq_index }}</td>
+                    <td>{{ row.sinr }}</td>
+                    <td>{{ row.lqi }}</td>
+                    <td>{{ row.link_condition }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        <button class="view-all-btn" onclick="toggleRows('rf-parameters', this)">View All</button>
+
+        <!-- Predicted Parameters Table -->
+        <h3>Predicted LTE Parameters</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Timestamp</th>
+                    <th>LTE Type</th>
+                    <th>RSRP</th>
+                    <th>RSRP Index</th>
+                    <th>RSRQ</th>
+                    <th>RSRQ Index</th>
+                    <th>SINR</th>
+                    <th>LQI</th>
+                    <th>Link Condition</th>
+                </tr>
+            </thead>
+            <tbody id="predicted-parameters">
+                {% for row in predicted_data %}
+                <tr {% if forloop.counter0 >= 2 %}class="hidden-row"{% endif %}>
+                    <td>{{ row.timestamp }}</td>
+                    <td>{{ row.lte_type }}</td>
+                    <td>{{ row.rsrp }}</td>
+                    <td>{{ row.rsrp_index }}</td>
+                    <td>{{ row.rsrq }}</td>
+                    <td>{{ row.rsrq_index }}</td>
+                    <td>{{ row.sinr }}</td>
+                    <td>{{ row.lqi }}</td>
+                    <td>{{ row.link_condition }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        <button class="view-all-btn" onclick="toggleRows('predicted-parameters', this)">View All</button>
+
+        <!-- Recommended Action Table -->
+        <h3>Recommended Action</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>LTE Type</th>
+                    <th>Avg LQI</th>
+                    <th>Packet Loss (%)</th>
+                    <th>High Loss Instances</th>
+                    <th>LQIa</th>
+                    <th>PRL</th>
+                    <th>SI</th>
+                    <th>Recommended Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in switching_result %}
+                <tr>
+                    <td>{{ row.lte_type }}</td>
+                    <td>{{ row.avg_lqi }}</td>
+                    <td>{{ row.packet_loss|floatformat:2 }}%</td>
+                    <td>{{ row.high_loss_count }}/{{ request.session.num_test_instances }}</td>
+                    <td>{{ row.LQIa }}</td>
+                    <td>{{ row.PRL }}</td>
+                    <td>{{ row.SI }}</td>
+                    <td>{{ row.recommended_action }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <!-- Current Network Status -->
+        <h3>Current Network Status</h3>
+        <div id="status-container" class="network-status-container">
+            <!-- Status will be dynamically populated here -->
+        </div>
+    </div>
+
+    <script>
+        function toggleRows(tableId, button) {
+            let rows = document.querySelectorAll(`#${tableId} .hidden-row`);
+            let isHidden = rows[0].style.display === 'none' || rows[0].style.display === '';
+
+            rows.forEach(row => {
+                row.style.display = isHidden ? 'table-row' : 'none';
+            });
+
+            button.innerText = isHidden ? 'Hide' : 'View All';
+        }
+
+        function loadCurrentStatus() {
+            fetch("/network_monitoring/current_status/")
+                .then(response => response.json())
+                .then(data => {
+                    const statusContainer = document.getElementById("status-container");
+
+                    if (data.status === "success" && data.data) {
+                        // Clear previous content
+                        statusContainer.innerHTML = '';
+
+                        // Create a card for each LTE type
+                        for (const lteType in data.data) {
+                            const statusData = data.data[lteType];
+                            
+                            const card = document.createElement('div');
+                            card.className = 'lte-status-card';
+                            
+                            card.innerHTML = `
+                                <div class="lte-status-header">${lteType} Network Status</div>
+                                <div class="lte-status-content">
+                                    <div class="metric">
+                                        <span class="metric-name">Last Test:</span>
+                                        <span class="metric-value">${statusData.timestamp || "-"}</span>
+                                    </div>
+                                    <div class="metric">
+                                        <span class="metric-name">Current Loss:</span>
+                                        <span class="metric-value">${formatNumericValue(statusData.packet_loss || "-")}</span>
+                                    </div>
+                                    <div class="metric">
+                                        <span class="metric-name">Latency:</span>
+                                        <span class="metric-value">${formatNumericValue(statusData.latency || "-")}</span>
+                                    </div>
+                                    <div class="metric">
+                                        <span class="metric-name">Jitter:</span>
+                                        <span class="metric-value">${formatNumericValue(statusData.jitter || "-")}</span>
+                                    </div>
+                                </div>
+                            `;
+
+                            statusContainer.appendChild(card);
+                        }
+                    } else {
+                        statusContainer.innerHTML = `
+                            <div class="lte-status-card">
+                                <div class="lte-status-header">No Data</div>
+                                <div class="lte-status-content">
+                                    <p>No monitoring data available</p>
+                                </div>
+                            </div>
+                        `;
+                    }
+                })
+                .catch(error => {
+                    console.error("Error loading status:", error);
+                    const statusContainer = document.getElementById("status-container");
+                    statusContainer.innerHTML = `
+                        <div class="lte-status-card">
+                            <div class="lte-status-header">Error</div>
+                            <div class="lte-status-content">
+                                <p>Error loading data</p>
+                            </div>
+                        </div>
+                    `;
+                });
+        }
+
+        function formatNumericValue(value) {
+            if (value === "-") return "-";
+
+            if (typeof value === 'string' && value.endsWith('%')) {
+                const numValue = parseFloat(value);
+                if (!isNaN(numValue)) {
+                    return numValue.toFixed(2) + '%';
+                }
+            }
+
+            const numValue = parseFloat(value);
+            if (!isNaN(numValue)) {
+                return numValue.toFixed(2);
+            }
+
+            return value;
+        }
+
+        document.addEventListener("DOMContentLoaded", function () {
+            loadCurrentStatus();
+        });
+
+        setInterval(loadCurrentStatus, 30000);
+    </script>
+</body>
+</html>

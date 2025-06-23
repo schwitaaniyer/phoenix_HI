@@ -1,0 +1,485 @@
+{% extends "base.html" %}
+{% load crispy_forms_tags %}
+
+{% block title %}Firewall Configuration{% endblock %}
+
+{% block content %}
+<div class="card mb-4">
+    <div class="card-header">
+        <h2>Firewall Configuration</h2>
+    </div>
+    <div class="card-body">
+        <ul class="nav nav-tabs mb-4">
+            <li class="nav-item">
+                <a class="nav-link {% if active_tab == 'rules' %}active{% endif %}" 
+                   href="?tab=rules">Rules</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {% if active_tab == 'zones' %}active{% endif %}" 
+                   href="?tab=zones">Zones</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {% if active_tab == 'nat' %}active{% endif %}" 
+                   href="?tab=nat">NAT</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {% if active_tab == 'logging' %}active{% endif %}" 
+                   href="?tab=logging">Logging</a>
+            </li>
+        </ul>
+
+        {% if active_tab == 'rules' %}
+        <div class="row">
+            <div class="col-md-6">
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h4>Add Firewall Rule</h4>
+                    </div>
+                    <div class="card-body">
+                        <form method="post">
+                            {% csrf_token %}
+                            <input type="hidden" name="form_type" value="add_rule">
+                            {{ rule_form|crispy }}
+                            <button type="submit" class="btn btn-primary">Add Rule</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h4>Current Firewall Rules</h4>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>Chain</th>
+                                        <th>Source</th>
+                                        <th>Destination</th>
+                                        <th>Protocol</th>
+                                        <th>Action</th>
+                                        <th>Options</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for rule in rules %}
+                                    <tr>
+                                        <td>{{ rule.chain }}</td>
+                                        <td>{{ rule.source }}</td>
+                                        <td>{{ rule.destination }}</td>
+                                        <td>{{ rule.protocol }}</td>
+                                        <td>{{ rule.action }}</td>
+                                        <td>
+                                            <div class="btn-group btn-group-sm">
+                                                <button class="btn btn-primary" 
+                                                        data-bs-toggle="modal" 
+                                                        data-bs-target="#editRuleModal"
+                                                        data-rule-id="{{ rule.id }}"
+                                                        data-rule-chain="{{ rule.chain }}"
+                                                        data-rule-source="{{ rule.source }}"
+                                                        data-rule-destination="{{ rule.destination }}"
+                                                        data-rule-protocol="{{ rule.protocol }}"
+                                                        data-rule-action="{{ rule.action }}"
+                                                        data-rule-options="{{ rule.options }}">
+                                                    Edit
+                                                </button>
+                                                <button class="btn btn-danger delete-rule" data-rule-id="{{ rule.id }}">Delete</button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% empty %}
+                                    <tr>
+                                        <td colspan="6" class="text-center">No firewall rules configured</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        {% elif active_tab == 'zones' %}
+        <div class="row">
+            <div class="col-md-6">
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h4>Add Firewall Zone</h4>
+                    </div>
+                    <div class="card-body">
+                        <form method="post">
+                            {% csrf_token %}
+                            <input type="hidden" name="form_type" value="add_zone">
+                            {{ zone_form|crispy }}
+                            <button type="submit" class="btn btn-primary">Add Zone</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h4>Current Firewall Zones</h4>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>Name</th>
+                                        <th>Interfaces</th>
+                                        <th>Default Policy</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for zone in zones %}
+                                    <tr>
+                                        <td>{{ zone.name }}</td>
+                                        <td>{{ zone.interfaces }}</td>
+                                        <td>{{ zone.policy }}</td>
+                                        <td>
+                                            <div class="btn-group btn-group-sm">
+                                                <button class="btn btn-primary" 
+                                                        data-bs-toggle="modal" 
+                                                        data-bs-target="#editZoneModal"
+                                                        data-zone-id="{{ zone.id }}"
+                                                        data-zone-name="{{ zone.name }}"
+                                                        data-zone-interfaces="{{ zone.interfaces }}"
+                                                        data-zone-policy="{{ zone.policy }}">
+                                                    Edit
+                                                </button>
+                                                <button class="btn btn-danger delete-zone" data-zone-id="{{ zone.id }}">Delete</button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% empty %}
+                                    <tr>
+                                        <td colspan="4" class="text-center">No firewall zones configured</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        {% elif active_tab == 'nat' %}
+        <div class="row">
+            <div class="col-md-6">
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h4>Add NAT Rule</h4>
+                    </div>
+                    <div class="card-body">
+                        <form method="post">
+                            {% csrf_token %}
+                            <input type="hidden" name="form_type" value="add_nat">
+                            {{ nat_form|crispy }}
+                            <button type="submit" class="btn btn-primary">Add NAT Rule</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h4>Current NAT Rules</h4>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>Type</th>
+                                        <th>Source</th>
+                                        <th>Destination</th>
+                                        <th>Translate To</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for nat in nats %}
+                                    <tr>
+                                        <td>{{ nat.type }}</td>
+                                        <td>{{ nat.source }}</td>
+                                        <td>{{ nat.destination }}</td>
+                                        <td>{{ nat.translate }}</td>
+                                        <td>
+                                            <div class="btn-group btn-group-sm">
+                                                <button class="btn btn-primary" 
+                                                        data-bs-toggle="modal" 
+                                                        data-bs-target="#editNatModal"
+                                                        data-nat-id="{{ nat.id }}"
+                                                        data-nat-type="{{ nat.type }}"
+                                                        data-nat-source="{{ nat.source }}"
+                                                        data-nat-destination="{{ nat.destination }}"
+                                                        data-nat-translate="{{ nat.translate }}">
+                                                    Edit
+                                                </button>
+                                                <button class="btn btn-danger delete-nat" data-nat-id="{{ nat.id }}">Delete</button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% empty %}
+                                    <tr>
+                                        <td colspan="5" class="text-center">No NAT rules configured</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        {% elif active_tab == 'logging' %}
+        <div class="row">
+            <div class="col-md-6">
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h4>Firewall Log Settings</h4>
+                    </div>
+                    <div class="card-body">
+                        <form method="post">
+                            {% csrf_token %}
+                            <input type="hidden" name="form_type" value="log_settings">
+                            {{ log_form|crispy }}
+                            <button type="submit" class="btn btn-primary">Save Settings</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h4>Firewall Logs</h4>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>Timestamp</th>
+                                        <th>Action</th>
+                                        <th>Source</th>
+                                        <th>Destination</th>
+                                        <th>Protocol</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for log in logs %}
+                                    <tr>
+                                        <td>{{ log.timestamp }}</td>
+                                        <td>{{ log.action }}</td>
+                                        <td>{{ log.source }}</td>
+                                        <td>{{ log.destination }}</td>
+                                        <td>{{ log.protocol }}</td>
+                                    </tr>
+                                    {% empty %}
+                                    <tr>
+                                        <td colspan="5" class="text-center">No firewall logs available</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Edit Rule Modal -->
+<div class="modal fade" id="editRuleModal" tabindex="-1" aria-labelledby="editRuleModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editRuleModalLabel">Edit Firewall Rule</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="editRuleForm" method="post">
+                <div class="modal-body">
+                    {% csrf_token %}
+                    <input type="hidden" name="form_type" value="edit_rule">
+                    <input type="hidden" id="editRuleId" name="rule_id">
+                    {{ rule_form|crispy }}
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="submit" class="btn btn-primary">Update Rule</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Zone Modal -->
+<div class="modal fade" id="editZoneModal" tabindex="-1" aria-labelledby="editZoneModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editZoneModalLabel">Edit Firewall Zone</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="editZoneForm" method="post">
+                <div class="modal-body">
+                    {% csrf_token %}
+                    <input type="hidden" name="form_type" value="edit_zone">
+                    <input type="hidden" id="editZoneId" name="zone_id">
+                    {{ zone_form|crispy }}
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="submit" class="btn btn-primary">Update Zone</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Edit NAT Modal -->
+<div class="modal fade" id="editNatModal" tabindex="-1" aria-labelledby="editNatModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editNatModalLabel">Edit NAT Rule</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="editNatForm" method="post">
+                <div class="modal-body">
+                    {% csrf_token %}
+                    <input type="hidden" name="form_type" value="edit_nat">
+                    <input type="hidden" id="editNatId" name="nat_id">
+                    {{ nat_form|crispy }}
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="submit" class="btn btn-primary">Update NAT Rule</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+// Rule operations
+document.querySelectorAll('.delete-rule').forEach(button => {
+    button.addEventListener('click', function() {
+        const ruleId = this.dataset.ruleId;
+        if (confirm('Are you sure you want to delete this rule?')) {
+            fetch(`/network/firewall/rule/${ruleId}/delete/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}',
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Rule deleted successfully');
+                    location.reload();
+                } else {
+                    alert('Error deleting rule: ' + data.error);
+                }
+            });
+        }
+    });
+});
+
+// Zone operations
+document.querySelectorAll('.delete-zone').forEach(button => {
+    button.addEventListener('click', function() {
+        const zoneId = this.dataset.zoneId;
+        if (confirm('Are you sure you want to delete this zone?')) {
+            fetch(`/network/firewall/zone/${zoneId}/delete/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}',
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Zone deleted successfully');
+                    location.reload();
+                } else {
+                    alert('Error deleting zone: ' + data.error);
+                }
+            });
+        }
+    });
+});
+
+// NAT operations
+document.querySelectorAll('.delete-nat').forEach(button => {
+    button.addEventListener('click', function() {
+        const natId = this.dataset.natId;
+        if (confirm('Are you sure you want to delete this NAT rule?')) {
+            fetch(`/network/firewall/nat/${natId}/delete/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}',
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('NAT rule deleted successfully');
+                    location.reload();
+                } else {
+                    alert('Error deleting NAT rule: ' + data.error);
+                }
+            });
+        }
+    });
+});
+
+// Edit rule modal setup
+document.getElementById('editRuleModal').addEventListener('show.bs.modal', function(event) {
+    const button = event.relatedTarget;
+    const modal = this;
+    
+    modal.querySelector('#editRuleId').value = button.dataset.ruleId;
+    modal.querySelector('#id_chain').value = button.dataset.ruleChain;
+    modal.querySelector('#id_source').value = button.dataset.ruleSource;
+    modal.querySelector('#id_destination').value = button.dataset.ruleDestination;
+    modal.querySelector('#id_protocol').value = button.dataset.ruleProtocol;
+    modal.querySelector('#id_action').value = button.dataset.ruleAction;
+    modal.querySelector('#id_options').value = button.dataset.ruleOptions;
+});
+
+// Edit zone modal setup
+document.getElementById('editZoneModal').addEventListener('show.bs.modal', function(event) {
+    const button = event.relatedTarget;
+    const modal = this;
+    
+    modal.querySelector('#editZoneId').value = button.dataset.zoneId;
+    modal.querySelector('#id_name').value = button.dataset.zoneName;
+    modal.querySelector('#id_interfaces').value = button.dataset.zoneInterfaces;
+    modal.querySelector('#id_policy').value = button.dataset.zonePolicy;
+});
+
+// Edit NAT modal setup
+document.getElementById('editNatModal').addEventListener('show.bs.modal', function(event) {
+    const button = event.relatedTarget;
+    const modal = this;
+    
+    modal.querySelector('#editNatId').value = button.dataset.natId;
+    modal.querySelector('#id_type').value = button.dataset.natType;
+    modal.querySelector('#id_source').value = button.dataset.natSource;
+    modal.querySelector('#id_destination').value = button.dataset.natDestination;
+    modal.querySelector('#id_translate').value = button.dataset.natTranslate;
+});
+</script>
+{% endblock %}
+{% endblock %}

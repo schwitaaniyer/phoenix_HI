@@ -1,0 +1,183 @@
+/* General body styling */
+body {
+    font-family: 'Arial', sans-serif;
+    background: var(--theme-mode-bg);
+    color: var(--white);
+    margin: 40px;
+}
+
+h1, h2, h3 {
+    color: var(--white);
+    text-align: left;
+    margin-bottom: 20px;
+}
+
+/* Table styling */
+table {
+    width: auto; /* Restore the original table width */
+    margin-bottom: 30px;
+    border-collapse: collapse;
+}
+
+th, td {
+    padding: 10px;
+    text-align: left;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: var(--white);
+    white-space: nowrap;  /* Prevent text wrapping */
+}
+
+th {
+    background-color: rgba(0, 0, 0, 0.8);
+    font-weight: bold;
+}
+
+td {
+    background-color: rgba(0, 0, 0, 0.5);
+    white-space: nowrap;  /* Ensure table doesn't stretch vertically */
+}
+
+/* Align action buttons horizontally */
+td .action-buttons {
+    display: flex;  /* Use flexbox to align buttons horizontally */
+    gap: 10px;  /* Add some spacing between buttons */
+}
+
+/* Ensure buttons in the action-buttons container are aligned properly and have consistent size */
+.action-buttons button,
+.action-buttons form button {
+    background-color: var(--sky-light-cl);
+    color: var(--white);
+    border: none;
+    padding: 6px 12px;  /* Consistent padding for all buttons */
+    cursor: pointer;
+    border-radius: 5px;
+    transition: 0.3s ease;
+    font-size: 14px;
+    height: 35px;  /* Set a fixed height to prevent vertical resizing */
+    width: 80px;  /* Set consistent width for all buttons */
+    line-height: 1.2;  /* Ensures text is centered vertically */
+    text-align: center;
+    display: inline-block;
+}
+
+.action-buttons button:hover,
+.action-buttons form button:hover {
+    background-color: var(--white);
+    color: var(--sky-light-cl);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+/* Flexbox layout for action buttons with proper horizontal alignment */
+.action-buttons {
+    display: flex;
+    gap: 10px;  /* Horizontal spacing between buttons */
+    align-items: center;  /* Ensure buttons align vertically in the middle */
+}
+/* Form container and labels */
+.form-container {
+    background-color: rgba(255, 255, 255, 0.1);
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    margin-bottom: 30px;
+}
+
+/* Title section background for 'Configure IPsec Connection' */
+.form-title {
+    background-color: rgba(0, 0, 0, 0.8);
+    color: var(--white);
+    padding: 10px;
+    border-radius: 10px;
+    font-size: 18px;
+    margin-bottom: 20px;
+    text-align: left;
+}
+
+/* Form group styling */
+.form-group {
+    margin-bottom: 15px;
+    display: flex;
+    align-items: flex-start;
+}
+
+.form-group label {
+    width: 200px;
+    font-size: 16px;
+    color: var(--white);
+}
+
+.form-group input,
+.form-group select {
+    width: calc(100% - 210px);
+    padding: 10px;
+    margin-left: 10px;
+    background-color: rgba(255, 255, 255, 0.9);
+    border: none;
+    border-radius: 5px;
+    color: #333;
+}
+
+/* Generate PSK button below input */
+#psk_field button {
+    display: block;
+    margin-top: 10px;
+    background-color: #ff9800;
+    color: #fff;
+    border-radius: 5px;
+    padding: 8px 20px;
+    font-size: 14px;
+    border: none;
+    cursor: pointer;
+}
+
+#psk_field button:hover {
+    background-color: #ffa726;
+}
+
+/* Local and Remote Connection alignment */
+h3 {
+    font-size: 16px;
+    margin-bottom: 10px;
+    text-align: left;
+}
+
+/* Button styling for form submission */
+button[type="submit"] {
+    width: auto;
+    padding: 10px 20px;
+    background-color: var(--sky-light-cl);
+    color: var(--white);
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    display: block;
+    margin: 20px 0;
+}
+
+button[type="submit"]:hover {
+    background-color: var(--white);
+    color: var(--sky-light-cl);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+/* Responsive design */
+@media screen and (max-width: 768px) {
+    .form-group {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .form-group label,
+    .form-group input,
+    .form-group select,
+    .form-group button {
+        width: 100%;
+        margin-left: 0;
+    }
+
+    button[type="submit"] {
+        width: 100%;
+    }
+}

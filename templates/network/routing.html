@@ -1,0 +1,493 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Routing{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="card">
+    <div class="card-header">
+            <h4 class="mb-0">Routing Management</h4>
+    </div>
+    <div class="card-body">
+            <!-- Tabs -->
+            <ul class="nav nav-tabs mb-4" role="tablist">
+            <li class="nav-item">
+                <a class="nav-link {% if active_tab == 'basic' %}active{% endif %}" 
+                       href="#basic" data-bs-toggle="tab" role="tab">Basic Routing</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {% if active_tab == 'advanced' %}active{% endif %}" 
+                       href="#advanced" data-bs-toggle="tab" role="tab">Advanced Routing</a>
+            </li>
+            <li class="nav-item">
+                    <a class="nav-link {% if active_tab == 'app-aware' %}active{% endif %}" 
+                       href="#app-aware" data-bs-toggle="tab" role="tab">Application-Aware</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {% if active_tab == 'mesh' %}active{% endif %}" 
+                       href="#mesh" data-bs-toggle="tab" role="tab">NHRP Mesh</a>
+            </li>
+        </ul>
+
+            <!-- Tab Content -->
+            <div class="tab-content">
+                <!-- Basic Routing Tab -->
+                <div class="tab-pane fade {% if active_tab == 'basic' %}show active{% endif %}" id="basic" role="tabpanel">
+                    <!-- Full Routing Table -->
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <div class="card">
+                                <div class="card-header d-flex justify-content-between align-items-center">
+                                    <h5 class="mb-0">Routing Table</h5>
+                                    <button class="btn btn-sm btn-primary" onclick="refreshRoutingTable()">
+                                        <i class="fas fa-sync-alt"></i> Refresh
+                                    </button>
+                                </div>
+                                <div class="card-body">
+                                    <div class="table-responsive">
+                                        <table class="table table-striped table-hover">
+                                            <thead>
+                                                <tr>
+                                                    <th>Destination</th>
+                                                    <th>Gateway</th>
+                                                    <th>Genmask</th>
+                                                    <th>Flags</th>
+                                                    <th>Metric</th>
+                                                    <th>Ref</th>
+                                                    <th>Use</th>
+                                                    <th>Interface</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {% for route in routing_table_data %}
+                                                <tr>
+                                                    <td>{{ route.destination }}</td>
+                                                    <td>{{ route.gateway }}</td>
+                                                    <td>{{ route.genmask }}</td>
+                                                    <td>{{ route.flags }}</td>
+                                                    <td>{{ route.metric }}</td>
+                                                    <td>{{ route.ref }}</td>
+                                                    <td>{{ route.use }}</td>
+                                                    <td>{{ route.interface }}</td>
+                                                </tr>
+                                                {% empty %}
+                                                <tr>
+                                                    <td colspan="8" class="text-center">No routes found</td>
+                                                </tr>
+                                                {% endfor %}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Other Basic Routing Components -->
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5 class="mb-0">Current Routes</h5>
+                                </div>
+                                <div class="card-body">
+                                    <pre class="route-output">{{ basic_routes }}</pre>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5 class="mb-0">Trace Route</h5>
+                                </div>
+                                <div class="card-body">
+                                    <form method="post">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="tab" value="basic">
+                                        <input type="hidden" name="action" value="trace_route">
+                                        <div class="mb-3">
+                                            <label class="form-label">Destination</label>
+                                            <input type="text" name="destination" class="form-control" placeholder="8.8.8.8">
+                                        </div>
+                                        <div class="mb-3">
+                                            <label class="form-label">Max Hops</label>
+                                            <input type="number" name="max_hops" class="form-control" value="30">
+                                        </div>
+                                        <button type="submit" class="btn btn-primary">Trace Route</button>
+                                    </form>
+                                    {% if trace_result %}
+                                    <div class="mt-3">
+                                        <h6>Trace Result:</h6>
+                                        <pre class="route-output">{{ trace_result }}</pre>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+        <div class="row">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                                    <h5 class="mb-0">Add Route</h5>
+                    </div>
+                    <div class="card-body">
+                                    <form method="post">
+                            {% csrf_token %}
+                            <input type="hidden" name="tab" value="basic">
+                            <input type="hidden" name="action" value="add_route">
+                            <div class="mb-3">
+                                            <label class="form-label">Network/Mask</label>
+                                            <input type="text" name="network" class="form-control" placeholder="192.168.1.0/24">
+                            </div>
+                            <div class="mb-3">
+                                            <label class="form-label">Gateway</label>
+                                            <input type="text" name="gateway" class="form-control" placeholder="10.0.0.1">
+                            </div>
+                            <button type="submit" class="btn btn-primary">Add Route</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                                    <h5 class="mb-0">Display Routes</h5>
+                                </div>
+                                <div class="card-body">
+                                    <form method="post">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="tab" value="basic">
+                                        <input type="hidden" name="action" value="show_table">
+                                        <div class="mb-3">
+                                            <label class="form-label">Target</label>
+                                            <select name="table" class="form-select">
+                                                <option value="main">Main</option>
+                                                <option value="local">Local</option>
+                                                <option value="default">Default</option>
+                                                <option value="all">All</option>
+                                            </select>
+                                        </div>
+                                        <button type="submit" class="btn btn-primary">Show Routes</button>
+                                    </form>
+                                    {% if routing_table %}
+                                    <div class="mt-3">
+                                        <h6>Table Contents:</h6>
+                                        <pre class="route-output">{{ routing_table }}</pre>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Advanced Routing Tab -->
+                <div class="tab-pane fade {% if active_tab == 'advanced' %}show active{% endif %}" id="advanced" role="tabpanel">
+                    <div class="row mb-4">
+                        <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                                    <h5 class="mb-0">Advanced Routes</h5>
+                                </div>
+                                <div class="card-body">
+                                    <pre class="route-output">{{ advanced_routes }}</pre>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5 class="mb-0">Policy-Based Routing</h5>
+                                </div>
+                                <div class="card-body">
+                                    <form method="post">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="tab" value="advanced">
+                                        <input type="hidden" name="action" value="add_policy">
+                                        <div class="mb-3">
+                                            <label class="form-label">Source</label>
+                                            <input type="text" name="source" class="form-control" placeholder="192.168.1.0/24">
+                                        </div>
+                                        <div class="mb-3">
+                                            <label class="form-label">Table</label>
+                                            <input type="text" name="table" class="form-control" placeholder="100">
+                                        </div>
+                                        <div class="mb-3">
+                                            <label class="form-label">Priority</label>
+                                            <input type="number" name="priority" class="form-control" value="100">
+                                        </div>
+                                        <button type="submit" class="btn btn-primary">Add Policy</button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5 class="mb-0">VRF Configuration</h5>
+                    </div>
+                    <div class="card-body">
+                                    <form method="post">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="tab" value="advanced">
+                                        <input type="hidden" name="action" value="add_vrf">
+                                        <div class="mb-3">
+                                            <label class="form-label">VRF Name</label>
+                                            <input type="text" name="vrf_name" class="form-control" placeholder="vrf1">
+                                        </div>
+                                        <div class="mb-3">
+                                            <label class="form-label">Table ID</label>
+                                            <input type="number" name="table_id" class="form-control" placeholder="100">
+                                        </div>
+                                        <button type="submit" class="btn btn-primary">Create VRF</button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Application-Aware Routing Tab -->
+                <div class="tab-pane fade {% if active_tab == 'app-aware' %}show active{% endif %}" id="app-aware" role="tabpanel">
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5 class="mb-0">Application Rules</h5>
+                                </div>
+                                <div class="card-body">
+                                    <pre class="route-output">{{ app_routes }}</pre>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5 class="mb-0">Add Application Rule</h5>
+                                </div>
+                                <div class="card-body">
+                                    <form method="post">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="tab" value="app-aware">
+                                        <input type="hidden" name="action" value="add_app_rule">
+                                        <div class="mb-3">
+                                            <label class="form-label">Application</label>
+                                            <select name="application" class="form-select">
+                                                <option value="http">HTTP</option>
+                                                <option value="https">HTTPS</option>
+                                                <option value="voip">VoIP</option>
+                                                <option value="video">Video</option>
+                                            </select>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label class="form-label">Exit Interface</label>
+                                            <select name="interface" class="form-select">
+                                                {% for iface in interfaces %}
+                                                <option value="{{ iface }}">{{ iface }}</option>
+                                                {% endfor %}
+                                            </select>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label class="form-label">SLA Profile</label>
+                                            <select name="sla_profile" class="form-select">
+                                                <option value="low-latency">Low Latency</option>
+                                                <option value="high-bandwidth">High Bandwidth</option>
+                                                <option value="balanced">Balanced</option>
+                                            </select>
+                                        </div>
+                                        <button type="submit" class="btn btn-primary">Add Rule</button>
+                                    </form>
+                </div>
+            </div>
+        </div>
+                        <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                                    <h5 class="mb-0">SLA Monitoring</h5>
+            </div>
+            <div class="card-body">
+                                    <form method="post">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="tab" value="app-aware">
+                                        <input type="hidden" name="action" value="add_sla">
+                                        <div class="mb-3">
+                                            <label class="form-label">Profile Name</label>
+                                            <input type="text" name="profile_name" class="form-control" placeholder="low-latency">
+                                        </div>
+                                        <div class="mb-3">
+                                            <label class="form-label">Latency Threshold (ms)</label>
+                                            <input type="number" name="latency" class="form-control" value="100">
+                                        </div>
+                                        <div class="mb-3">
+                                            <label class="form-label">Jitter Threshold (ms)</label>
+                                            <input type="number" name="jitter" class="form-control" value="50">
+                                        </div>
+                                        <div class="mb-3">
+                                            <label class="form-label">Packet Loss (%)</label>
+                                            <input type="number" name="packet_loss" class="form-control" value="1">
+                                        </div>
+                                        <button type="submit" class="btn btn-primary">Create Profile</button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+            </div>
+        </div>
+        
+                <!-- NHRP Mesh Tab -->
+                <div class="tab-pane fade {% if active_tab == 'mesh' %}show active{% endif %}" id="mesh" role="tabpanel">
+                    <div class="row mb-4">
+                        <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                                    <h5 class="mb-0">NHRP Status</h5>
+            </div>
+            <div class="card-body">
+                                    <pre class="route-output">{{ mesh_status }}</pre>
+                                </div>
+                            </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                                    <h5 class="mb-0">Configure NHRP</h5>
+                    </div>
+                    <div class="card-body">
+                                    <form method="post">
+                            {% csrf_token %}
+                            <input type="hidden" name="tab" value="mesh">
+                            <input type="hidden" name="action" value="add_mesh">
+                                        <div class="mb-3">
+                                            <label class="form-label">Interface</label>
+                                            <select name="interface" class="form-select">
+                                                {% for iface in interfaces %}
+                                                <option value="{{ iface }}">{{ iface }}</option>
+                                                {% endfor %}
+                                            </select>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label class="form-label">Hub Address</label>
+                                            <input type="text" name="hub" class="form-control" placeholder="10.0.0.1">
+                                        </div>
+                                        <div class="mb-3">
+                                            <label class="form-label">Authentication</label>
+                                            <input type="text" name="secret" class="form-control" placeholder="shared-secret">
+                                        </div>
+                                        <div class="mb-3">
+                                            <label class="form-label">Holding Time</label>
+                                            <input type="number" name="holding_time" class="form-control" value="300">
+                                        </div>
+                                        <button type="submit" class="btn btn-primary">Configure NHRP</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                                    <h5 class="mb-0">FRR Configuration</h5>
+                    </div>
+                    <div class="card-body">
+                                    <form method="post">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="tab" value="mesh">
+                                        <input type="hidden" name="action" value="configure_frr">
+                                        <div class="mb-3">
+                                            <label class="form-label">Primary Path</label>
+                                            <select name="primary_path" class="form-select">
+                                                {% for iface in interfaces %}
+                                                <option value="{{ iface }}">{{ iface }}</option>
+                                                {% endfor %}
+                                            </select>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label class="form-label">Backup Path</label>
+                                            <select name="backup_path" class="form-select">
+                                                {% for iface in interfaces %}
+                                                <option value="{{ iface }}">{{ iface }}</option>
+                                                {% endfor %}
+                                            </select>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label class="form-label">Failover Delay (ms)</label>
+                                            <input type="number" name="failover_delay" class="form-control" value="50">
+                                        </div>
+                                        <button type="submit" class="btn btn-primary">Configure FRR</button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.route-output {
+    background-color: #1e1e1e;
+    color: #fff;
+    padding: 1rem;
+    border-radius: 0.5rem;
+    font-family: monospace;
+    white-space: pre-wrap;
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.table-responsive {
+    max-height: 500px;
+    overflow-y: auto;
+}
+
+.table th {
+    position: sticky;
+    top: 0;
+    background-color: #f8f9fa;
+    z-index: 1;
+}
+</style>
+
+<script>
+function refreshRoutingTable() {
+    // Add AJAX call to refresh routing table data
+    fetch(window.location.href, {
+        method: 'GET',
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        // Update the table with new data
+        const tbody = document.querySelector('.table tbody');
+        tbody.innerHTML = '';
+        
+        data.routes.forEach(route => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>${route.destination}</td>
+                <td>${route.gateway}</td>
+                <td>${route.genmask}</td>
+                <td>${route.flags}</td>
+                <td>${route.metric}</td>
+                <td>${route.ref}</td>
+                <td>${route.use}</td>
+                <td>${route.interface}</td>
+            `;
+            tbody.appendChild(tr);
+        });
+    })
+    .catch(error => console.error('Error:', error));
+}
+</script>
+{% endblock %}

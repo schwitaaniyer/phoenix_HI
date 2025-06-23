@@ -1,0 +1,13 @@
+<form method="post" action="{% url 'configure_ldap' %}">
+    {% csrf_token %}
+    <label for="ldap_ip">LDAP Server IP:</label>
+    <input type="text" id="ldap_ip" name="ldap_ip" required>
+    
+    <label for="bind_dn">Bind DN:</label>
+    <input type="text" id="bind_dn" name="bind_dn" required>
+    
+    <label for="bind_password">Bind Password:</label>
+    <input type="password" id="bind_password" name="bind_password" required>
+    
+    <button type="submit">Submit</button>
+</form>

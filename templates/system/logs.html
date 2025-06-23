@@ -1,0 +1,161 @@
+{% extends "base.html" %}
+{% load crispy_forms_tags %}
+
+{% block title %}System Logs{% endblock %}
+
+{% block content %}
+<div class="card mb-4">
+    <div class="card-header">
+        <h2>System Logs</h2>
+    </div>
+    <div class="card-body">
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <form method="get">
+                    <div class="input-group">
+                        <input type="text" class="form-control" name="search" placeholder="Search logs...">
+                        <button class="btn btn-primary" type="submit">Search</button>
+                    </div>
+                </form>
+            </div>
+            <div class="col-md-6 text-end">
+                <a href="?download=1" class="btn btn-secondary">Download Logs</a>
+                <button class="btn btn-danger" id="clearLogs">Clear Logs</button>
+            </div>
+        </div>
+        
+        <div class="table-responsive">
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Timestamp</th>
+                        <th>Severity</th>
+                        <th>Source</th>
+                        <th>Message</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for log in logs %}
+                    <tr>
+                        <td>{{ log.timestamp }}</td>
+                        <td>
+                            <span class="badge bg-{% if log.severity == 'error' %}danger{% elif log.severity == 'warning' %}warning{% else %}info{% endif %}">
+                                {{ log.severity }}
+                            </span>
+                        </td>
+                        <td>{{ log.source }}</td>
+                        <td>{{ log.message }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        <nav aria-label="Log pagination">
+            <ul class="pagination justify-content-center">
+                {% if logs.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ logs.previous_page_number }}" aria-label="Previous">
+                        <span aria-hidden="true">&laquo;</span>
+                    </a>
+                </li>
+                {% endif %}
+                
+                {% for num in logs.paginator.page_range %}
+                <li class="page-item {% if num == logs.number %}active{% endif %}">
+                    <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+                </li>
+                {% endfor %}
+                
+                {% if logs.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ logs.next_page_number }}" aria-label="Next">
+                        <span aria-hidden="true">&raquo;</span>
+                    </a>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <h4>Running Processes</h4>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>PID</th>
+                        <th>User</th>
+                        <th>CPU %</th>
+                        <th>Memory %</th>
+                        <th>Command</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for process in processes %}
+                    <tr>
+                        <td>{{ process.pid }}</td>
+                        <td>{{ process.user }}</td>
+                        <td>{{ process.cpu }}</td>
+                        <td>{{ process.memory }}</td>
+                        <td>{{ process.command|truncatechars:50 }}</td>
+                        <td>
+                            <button class="btn btn-sm btn-danger" onclick="killProcess({{ process.pid }})">Kill</button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+function killProcess(pid) {
+    if (confirm('Are you sure you want to kill process ' + pid + '?')) {
+        fetch(`/system/kill-process/${pid}/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Process killed successfully');
+                location.reload();
+            } else {
+                alert('Error killing process: ' + data.error);
+            }
+        });
+    }
+}
+
+document.getElementById('clearLogs').addEventListener('click', function() {
+    if (confirm('Are you sure you want to clear all logs?')) {
+        fetch('/system/clear-logs/', {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Logs cleared successfully');
+                location.reload();
+            } else {
+                alert('Error clearing logs: ' + data.error);
+            }
+        });
+    }
+});
+</script>
+{% endblock %}
+{% endblock %}

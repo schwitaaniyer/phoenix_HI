@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LTE Switching Analysis</title>
+    <link rel="stylesheet" href="/static/css/common.css">
+    <style>
+        /* General Page Styling */
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #2c3e50;
+            color: #ecf0f1;
+            margin: 0;
+            padding: 0;
+        }
+
+        /* Navbar */
+        nav {
+            background: #1a252f;
+            color: #ecf0f1;
+            padding: 15px;
+            text-align: center;
+            font-size: 20px;
+            font-weight: bold;
+        }
+
+        /* Content Styling */
+        .content {
+            width: 85%;
+            margin: 20px auto;
+            padding: 20px;
+        }
+
+        /* Table Styling */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            background: #34495e;
+            color: #ecf0f1;
+            border-radius: 8px;
+        }
+
+        td, th {
+            padding: 12px;
+            text-align: center;
+            border-bottom: 1px solid #7f8c8d;
+        }
+
+        th {
+            background: #1a252f;
+        }
+
+        /* Table Rows */
+        tbody tr:nth-child(odd) {
+            background: #3d566e;
+        }
+
+        tbody tr:nth-child(even) {
+            background: #2c3e50;
+        }
+
+        /* Headings */
+        h3 {
+            background: #1a252f;
+            padding: 10px;
+            color: #ecf0f1;
+            text-align: center;
+            border-radius: 5px;
+        }
+
+        /* Buttons */
+        .view-all-btn {
+            background: #2980b9;
+            color: white;
+            border: none;
+            padding: 10px;
+            margin-top: 10px;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+
+        .view-all-btn:hover {
+            background: #1f6690;
+        }
+
+        /* Hide extra rows initially */
+        .hidden-row {
+            display: none;
+        }
+
+        /* Final Decision */
+        .final-decision {
+            background: #2980b9;
+            padding: 15px;
+            text-align: center;
+            font-size: 18px;
+            font-weight: bold;
+            color: #fff;
+            border-radius: 5px;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Navbar -->
+    <nav>
+        LTE Switching Analysis
+    </nav>
+
+    <div class="content">
+
+<!-- RF Parameters Table -->
+<h3>RF Parameters (Real-Time)</h3>
+<table>
+    <thead>
+        <tr>
+            <th>Timestamp</th><th>LTE Type</th><th>RSRP</th><th>RSRP Index</th>
+            <th>RSRQ</th><th>RSRQ Index</th><th>SINR</th><th>LQI</th><th>Link Condition</th>
+        </tr>
+    </thead>
+    <tbody id="rf-parameters">
+        {% for row in rf_data %}
+        <tr {% if forloop.counter0 >= 2 %}class="hidden-row"{% endif %}>
+            <td>{{ row.timestamp }}</td><td>{{ row.lte_type }}</td>
+            <td>{{ row.rsrp }}</td><td>{{ row.rsrp_index }}</td>
+            <td>{{ row.rsrq }}</td><td>{{ row.rsrq_index }}</td>
+            <td>{{ row.sinr }}</td><td>{{ row.lqi }}</td>
+            <td>{{ row.link_condition }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+<button class="view-all-btn" onclick="toggleRows('rf-parameters', this)">View All</button>
+
+<!-- Predicted Parameters Table -->
+<h3>Predicted LTE Parameters</h3>
+<table>
+    <thead>
+        <tr>
+            <th>Timestamp</th><th>LTE Type</th><th>RSRP</th><th>RSRP Index</th>
+            <th>RSRQ</th><th>RSRQ Index</th><th>SINR</th><th>LQI</th><th>Link Condition</th>
+        </tr>
+    </thead>
+    <tbody id="predicted-parameters">
+        {% for row in predicted_data %}
+        <tr {% if forloop.counter0 >= 2 %}class="hidden-row"{% endif %}>
+            <td>{{ row.timestamp }}</td><td>{{ row.lte_type }}</td>
+            <td>{{ row.rsrp }}</td><td>{{ row.rsrp_index }}</td>
+            <td>{{ row.rsrq }}</td><td>{{ row.rsrq_index }}</td>
+            <td>{{ row.sinr }}</td><td>{{ row.lqi }}</td>
+            <td>{{ row.link_condition }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+<button class="view-all-btn" onclick="toggleRows('predicted-parameters', this)">View All</button>
+
+
+<!-- Recommended Action Table -->
+<!-- Recommended Action Table -->
+<h3>Recommended Action</h3>
+<table>
+    <thead>
+        <tr>
+            <th>LTE Type</th>
+            <th>Avg LQI</th>
+            <th>Packet Loss (%)</th>
+            <th>High Loss Instances</th>
+            <th>LQIa</th>
+            <th>PRL</th>
+            <th>SI</th>
+            <th>Recommended Action</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for row in switching_result %}
+        <tr>
+            <td>{{ row.lte_type }}</td>
+            <td>{{ row.avg_lqi }}</td>
+            <td>{{ row.packet_loss|floatformat:2 }}%</td>
+            <td>{{ row.high_loss_count }}/{{ request.session.num_test_instances }}</td>
+            <td>{{ row.LQIa }}</td>
+            <td>{{ row.PRL }}</td>
+            <td>{{ row.SI }}</td>
+            <td>{{ row.recommended_action }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+
+
+        <!-- Final Decision -->
+        <!-- <div class="final-decision">
+            Final Switching Decision: {{ switch_decision }}
+        </div> -->
+
+    </div>
+
+    <script>
+        function toggleRows(tableId, button) {
+            let rows = document.querySelectorAll("#" + tableId + " .hidden-row");
+            let isVisible = rows[0].style.display === "table-row";
+
+            rows.forEach(row => {
+                row.style.display = isVisible ? "none" : "table-row";
+            });
+
+            button.innerText = isVisible ? "View All" : "Hide";
+        }
+    </script>
+
+</body>
+</html>

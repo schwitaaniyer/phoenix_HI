@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/static/css/plugins.css">
+    <title>Plugins Page</title>
+</head>
+
+<body>
+    <div class="main">
+        <nav> 
+            <div>
+                <div class="menu-icon">
+                    <div class="line-1"></div>
+                    <div class="line-2"></div>
+                    <div class="line-3"></div>
+                </div>
+                <div class="hughes-title">
+                    <h3>Plugins</h3>
+                </div>
+            </div>
+            <div class="nav-child2">
+                <div class="nav-home-logo"><svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <g id="SVGRepo_bgCarrier" stroke-width="0"></g>
+                        <g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g>
+                        <g id="SVGRepo_iconCarrier">
+                            <path fill-rule="evenodd" clip-rule="evenodd"
+                                d="M21.4498 10.275L11.9998 3.1875L2.5498 10.275L2.9998 11.625H3.7498V20.25H20.2498V11.625H20.9998L21.4498 10.275ZM5.2498 18.75V10.125L11.9998 5.0625L18.7498 10.125V18.75H14.9999V14.3333L14.2499 13.5833H9.74988L8.99988 14.3333V18.75H5.2498ZM10.4999 18.75H13.4999V15.0833H10.4999V18.75Z"
+                                fill="#ffffff"></path>
+                        </g>
+                    </svg></div>
+                <button class="logout_btn">Logout</button>
+                <div class="theme_button">
+                    <div class="theme_button_child"></div>
+                </div>
+            </div>
+
+
+        </nav>
+
+        <div class="main-body">
+            <!--<div class="menu-list">
+                <ul class="nav-links">
+                    <a href="/firewall/firewall.html">Firewall</a>
+                    <a href="#">Packet Inspection</a>
+                    <a href="#">Routing</a>
+                    <a href="#">Network Management</a>
+        
+                </ul>
+            </div>-->
+            <div class="content">
+
+                <div class="table">
+                    <!-- Form for adding a zone -->
+                    <form method="post">
+                        {% csrf_token %}
+                        <label for="command">Add Zone:</label>
+                        <input type="text" class="form-control" id="command" name="command" required>
+                        <button type="submit" >Add zone</button>
+                    </form>
+                    
+                    <!-- Form for deleting a zone -->
+                    <form method="post">
+                        {% csrf_token %}
+                        <label for="delete">Delete Zone:</label>
+                        <input type="text" class="form-control" id="delete" name="delete" required>
+                        <button type="submit" >Delete zone</button>
+                    </form>
+
+
+                    <!-- Form for renaming a zone -->
+                    <form method="post">
+                        {% csrf_token %}
+                        <label for="old_name">Old Zone Name:</label>
+                        <input type="text" class="form-control" id="old_name" name="old_name" required>
+                        
+                        <label for="new_name">New Zone Name:</label>
+                        <input type="text" class="form-control" id="new_name" name="new_name" required>
+                
+                        <button type="submit" >Rename Zone</button>
+                    </form>
+                
+                    <!-- Form for adding a comment to a zone -->
+                    <form method="post">
+                        {% csrf_token %}
+                         <label for="comment_zone">Zone Name:</label>
+                         <input type="text" class="form-control" id="comment_zone" name="comment_zone" required>
+                         
+                         <label for="status_message">Comment:</label>
+                         <input type="text" class="form-control" id="status_message" name="status_message" required>
+                         
+                         <button type="submit" >Add Comment</button>
+                    </form>
+
+                    <!-- Form for changing the status of a zone -->
+                    <form method="post">
+                        {% csrf_token %}
+                        <label for="status_zone">Zone Name:</label>
+                        <input type="text" class="form-control" id="status_zone" name="status_zone" required>
+                        
+                        <label for="status_message">New Status:</label>
+                        <input type="text" class="form-control" id="status_message" name="status_message" required>
+                        
+                        <button type="submit" >Change Status</button>
+                    </form>
+
+                    <!-- Form for status a zone -->
+                    <form method="post">
+                        {% csrf_token %}
+                        <label for="status_message">Status Zone:</label>
+                        <input type="text" class="form-control" id="status_message" name="status_message" required>
+                        
+                        <button type="submit" >Status zone</button>
+                    </form>
+
+                    <form method="post">
+                        <!-- {% csrf_token %} -->
+                        <label for="interfaces_backend">Interfaces Backend :</label>
+                        <input type="text" name="interfaces_backend" required>
+                        <button type="submit">Update</button>
+                    </form>
+
+                    <form method="post" action="{% url 'plugins' %}">
+                        <!-- {% csrf_token %} -->
+                        <label for="rules_backend">Rules Backend :</label>
+                        <input type="text" name="rules_backend" required>
+                        <button type="submit">Update</button>
+                    </form>
+                    
+                    <!-- Display result if available -->
+                    {% if result %}
+                    <div class="mt-4">
+                        <h4>Result:</h4>
+                        <pre>{{ result }}</pre>
+                    </div>
+                    {% endif %}
+
+
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="/static/js/plugins.js"></script>
+</body>
+
+</html>
+
+
+
+
+

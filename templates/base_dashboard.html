@@ -1,0 +1,143 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="{{ theme }}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SD-WAN Manager | {% block title %}{% endblock %}</title>
+    <link href="{% static 'css/bootstrap.min.css' %}" rel="stylesheet">
+    <link href="{% static 'css/fontawesome.min.css' %}" rel="stylesheet">
+    <link href="{% static 'css/custom.css' %}" rel="stylesheet">
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <div class="wrapper">
+        <!-- Sidebar -->
+        <nav id="sidebar" class="bg-dark text-white">
+            <div class="sidebar-header">
+                <h3>SD-WAN Manager</h3>
+                <strong>SDW</strong>
+            </div>
+            <ul class="list-unstyled components">
+                <li class="menu-category">MENU</li>
+                <li>
+                    <a href="{% url 'dashboard:index' %}">
+                        <i class="fas fa-tachometer-alt"></i> Dashboard
+                    </a>
+                </li>
+                <li>
+                    <a href="#systemSubmenu" data-bs-toggle="collapse" aria-expanded="false" class="dropdown-toggle">
+                        <i class="fas fa-cog"></i> System
+                    </a>
+                    <ul class="collapse list-unstyled" id="systemSubmenu">
+                        <li><a href="{% url 'system:logs' %}">Logs</a></li>
+                        <li><a href="{% url 'system:info' %}">System Info</a></li>
+                        <li><a href="{% url 'system:leds_ports' %}">LED's and Ports</a></li>
+                        <li><a href="{% url 'system:configuration' %}">Configuration</a></li>
+                        <li><a href="{% url 'login:profile' %}">User Profile</a></li>
+                    </ul>
+                </li>
+                <li>
+                    <a href="#servicesSubmenu" data-bs-toggle="collapse" aria-expanded="false" class="dropdown-toggle">
+                        <i class="fas fa-server"></i> Services
+                    </a>
+                    <ul class="collapse list-unstyled" id="servicesSubmenu">
+                        <li><a href="{% url 'services:ipsec' %}">IP Sec</a></li>
+                        <li><a href="{% url 'services:vpn' %}">VPN</a></li>
+                        <li><a href="{% url 'services:snmp' %}">SNMP</a></li>
+                        <li><a href="{% url 'services:ips_ids' %}">IPS / IDS</a></li>
+                        <li><a href="{% url 'services:risk_analysis' %}">Risk Analysis</a></li>
+                        <li><a href="{% url 'services:authentication' %}">Authentication</a></li>
+                    </ul>
+                </li>
+                <li>
+                    <a href="#networkSubmenu" data-bs-toggle="collapse" aria-expanded="false" class="dropdown-toggle">
+                        <i class="fas fa-network-wired"></i> Network
+                    </a>
+                    <ul class="collapse list-unstyled" id="networkSubmenu">
+                        <li><a href="{% url 'network:routing' %}">Routing</a></li>
+                        <li><a href="{% url 'network:firewall' %}">Firewall</a></li>
+                        <li><a href="{% url 'network:optimisation' %}">Optimisation</a></li>
+                        <li><a href="{% url 'network:bonding' %}">Bonding</a></li>
+                        <li><a href="{% url 'network:monitor' %}">Monitor</a></li>
+                        <li><a href="{% url 'network:dpi' %}">nDPI</a></li>
+                    </ul>
+                </li>
+                <li>
+                    <a href="{% url 'terminal:index' %}">
+                        <i class="fas fa-terminal"></i> Terminal
+                    </a>
+                </li>
+                <li>
+                    <a href="{% url 'login:logout' %}">
+                        <i class="fas fa-sign-out-alt"></i> Logout
+                    </a>
+                </li>
+            </ul>
+        </nav>
+
+        <!-- Page Content -->
+        <div id="content">
+            <!-- Top Navigation -->
+            <nav class="navbar navbar-expand-lg navbar-light bg-light fixed-top">
+                <div class="container-fluid">
+                    <button type="button" id="sidebarCollapse" class="btn btn-dark me-2">
+                        <i class="fas fa-align-left"></i>
+                        <span>Toggle Sidebar</span>
+                    </button>
+                    
+                    <!-- Search Bar -->
+                    <div class="d-flex w-50">
+                        <div class="input-group">
+                            <input type="text" id="globalSearch" class="form-control" placeholder="Search pages, functions...">
+                            <button class="btn btn-primary" type="button" id="searchButton">
+                                <i class="fas fa-search"></i>
+                            </button>
+                            <div class="dropdown-menu w-100" id="searchResults" aria-labelledby="globalSearch">
+                                <!-- Search results will appear here -->
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex align-items-center ms-auto">
+                        <div class="form-check form-switch me-3">
+                            <input class="form-check-input" type="checkbox" id="themeSwitch">
+                            <label class="form-check-label" for="themeSwitch">Dark Mode</label>
+                        </div>
+                        
+                        <div class="dropdown">
+                            <button class="btn btn-secondary dropdown-toggle" type="button" id="userDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                                {{ request.user.email }}
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+                                <li><a class="dropdown-item" href="{% url 'login:profile' %}">Edit Profile</a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item" href="{% url 'login:logout' %}">Logout</a></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </nav>
+
+            <!-- Main Content -->
+            <div class="container-fluid main-content">
+                {% block content %}{% endblock %}
+            </div>
+        </div>
+    </div>
+
+    <script src="{% static 'js/bootstrap.bundle.min.js' %}"></script>
+    <script src="{% static 'js/jquery.min.js' %}"></script>
+    <script>
+        $(document).ready(function () {
+            $('#sidebarCollapse').on('click', function () {
+                $('#sidebar').toggleClass('active');
+                $('#content').toggleClass('active');
+            });
+        });
+    </script>
+    <script src="{% static 'js/custom.js' %}"></script>
+    <script src="{% static 'js/search.js' %}"></script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

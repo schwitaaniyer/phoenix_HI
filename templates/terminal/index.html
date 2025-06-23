@@ -1,0 +1,119 @@
+{% extends "base.html" %}
+
+{% block title %}Terminal{% endblock %}
+
+{% block content %}
+<div class="card mb-4">
+    <div class="card-header">
+        <h2>Terminal Access</h2>
+    </div>
+    <div class="card-body">
+        <div class="alert alert-warning">
+            <strong>Warning:</strong> This terminal provides direct access to the system shell. Use with caution.
+        </div>
+        
+        <div id="terminalOutput" class="terminal-output">
+            <div class="terminal-line">
+                <span class="text-success">user@sdwan:</span>
+                <span class="text-primary">~$</span>
+                <span>Welcome to SD-WAN Manager Terminal</span>
+            </div>
+            <div class="terminal-line">
+                <span class="text-success">user@sdwan:</span>
+                <span class="text-primary">~$</span>
+                <span>Type your commands below</span>
+            </div>
+        </div>
+        
+        <form id="terminalForm" method="post" class="mt-3">
+            {% csrf_token %}
+            <div class="input-group">
+                <span class="input-group-text">
+                    <span class="text-success">user@sdwan:</span>
+                    <span class="text-primary">~$</span>
+                </span>
+                <input type="text" name="command" class="form-control terminal-input" autocomplete="off">
+                <button type="submit" class="btn btn-primary">Execute</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <h4>Common Commands</h4>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-6">
+                <h5>System</h5>
+                <ul class="list-group list-group-flush mb-3">
+                    <li class="list-group-item"><code>top</code> - Display system processes</li>
+                    <li class="list-group-item"><code>df -h</code> - Show disk usage</li>
+                    <li class="list-group-item"><code>free -h</code> - Show memory usage</li>
+                    <li class="list-group-item"><code>uptime</code> - Show system uptime</li>
+                </ul>
+            </div>
+            <div class="col-md-6">
+                <h5>Network</h5>
+                <ul class="list-group list-group-flush">
+                    <li class="list-group-item"><code>ip a</code> - Show network interfaces</li>
+                    <li class="list-group-item"><code>ip route</code> - Show routing table</li>
+                    <li class="list-group-item"><code>ping</code> - Test network connectivity</li>
+                    <li class="list-group-item"><code>traceroute</code> - Trace network path</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+document.getElementById('terminalForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const command = this.querySelector('input[name="command"]').value.trim();
+    
+    if (command) {
+        const output = document.getElementById('terminalOutput');
+        
+        // Add the command to output
+        const commandLine = document.createElement('div');
+        commandLine.className = 'terminal-line';
+        commandLine.innerHTML = `
+            <span class="text-success">user@sdwan:</span>
+            <span class="text-primary">~$</span>
+            <span>${command}</span>
+        `;
+        output.appendChild(commandLine);
+        
+        // Scroll to bottom
+        output.scrollTop = output.scrollHeight;
+        
+        // Send command to server
+        fetch(this.action, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': this.querySelector('[name=csrfmiddlewaretoken]').value,
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: new URLSearchParams(new FormData(this)),
+        })
+        .then(response => response.json())
+        .then(data => {
+            // Add command output
+            const outputLine = document.createElement('div');
+            outputLine.className = 'terminal-line';
+            outputLine.textContent = data.output || 'No output';
+            output.appendChild(outputLine);
+            
+            // Clear input
+            this.querySelector('input[name="command"]').value = '';
+            
+            // Scroll to bottom
+            output.scrollTop = output.scrollHeight;
+        });
+    }
+});
+</script>
+{% endblock %}
+{% endblock %}

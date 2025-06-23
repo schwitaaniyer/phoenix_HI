@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Network Monitoring Config</title>
+    <link rel="stylesheet" href="/static/css/common.css">
+</head>
+<body>
+    <div class="main">
+        <nav>
+            <h3>Network Monitoring - Configuration</h3>
+        </nav>
+        <div class="content">
+            <form id="configForm">
+                <label for="interval">Sampling Rate (Minutes):</label>
+                <input type="number" id="interval" name="interval" min="1" required>
+                <button type="submit">Save</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById("configForm").addEventListener("submit", function(event) {
+            event.preventDefault();
+            const interval = document.getElementById("interval").value;
+
+            fetch("/save_config", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ celery_interval: interval })
+            })
+            .then(response => response.json())
+            .then(data => alert(data.message))
+            .catch(error => console.error("Error:", error));
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Edit LDAP Server</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .container {
+            padding: 20px;
+            margin-top: 20px;
+            background: white;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        table th, table td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: left;
+        }
+        table th {
+            background-color: #3994b8;
+            color: white;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            font-size: 14px;
+            margin-bottom: 5px;
+            color: #555;
+        }
+        input[type="text"], input[type="password"] {
+            width: calc(100% - 10px);
+            padding: 8px;
+            font-size: 14px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        button {
+            padding: 10px 15px;
+            font-size: 14px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .btn-primary {
+            background-color: #3994b8;
+            color: white;
+        }
+        .btn-secondary {
+            background-color: #ccc;
+            color: black;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LDAP Configuration</title>
+</head>
+<body>
+    <h1>LDAP Configuration</h1>
+    <form method="post">
+        {% csrf_token %}
+        <label for="ldap_ip">LDAP Server IP:</label>
+        <input type="text" id="ldap_ip" name="ldap_ip" required>
+        <br>
+        <label for="bind_dn">Bind DN:</label>
+        <input type="text" id="bind_dn" name="bind_dn" required>
+        <br>
+        <label for="bind_password">Bind Password:</label>
+        <input type="password" id="bind_password" name="bind_password" required>
+        <br>
+        <button type="submit">Test Connection</button>
+    </form>
+
+    <h2>Connection Status</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Server IP</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for ip, status in connection_results.items %}
+                <tr>
+                    <td>{{ ip }}</td>
+                    <td>{{ status }}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</body>
+</html>
+
+    </div>
+</body>
+</html>

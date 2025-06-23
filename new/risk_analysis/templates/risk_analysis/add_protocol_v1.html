@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Add Custom Protocol</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .form-section { margin-bottom: 20px; }
+        #portFields { display: none; }
+        #results { margin-top: 20px; }
+        pre { background-color: #f8f9fa; padding: 10px; border-radius: 5px; }
+        .navbar-nav .nav-link { color: #fff; }
+        .navbar-nav .nav-link:hover { color: #ddd; }
+        .error-message { color: red; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="#">Network Analysis</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'risk_analysis:risk_analysis' %}">Risk Analysis</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="{% url 'risk_analysis:add_protocol_page' %}">Add Protocol</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+    <div class="container mt-5">
+        <h1>Add Custom Protocol</h1>
+        <p>Add a new protocol to be detected by nDPI. After submission, packet flows will be captured to verify detection.</p>
+        <div class="form-section">
+            <form id="protocolForm" action="{% url 'risk_analysis:add_protocol' %}" method="POST">
+                {% csrf_token %}
+                <div class="mb-3">
+                    <label for="format" class="form-label">Protocol Format</label>
+                    <select class="form-select" id="format" name="format" onchange="toggleFields()" required>
+                        <option value="" disabled selected>Select a format</option>
+                        <option value="ip">IP-based (e.g., ip:221.171.85.28@MARS)</option>
+                        <option value="port">Port-based (e.g., tcp:81,tcp:8181@HTTP)</option>
+                        <option value="hostname">Hostname-based (e.g., host:"ntop.org"@ntop)</option>
+                        <option value="ip_hostname">IP/Hostname (e.g., ip:www.ntop.org@ntop)</option>
+                        <option value="ipv6">IPv6-based (e.g., ipv6:[fe80::1]@Custom)</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label for="value" class="form-label">Value (e.g., IP, Port, Hostname)</label>
+                    <input type="text" class="form-control" id="value" name="value" placeholder="e.g., 221.171.85.28 or tcp:81,tcp:8181 or ntop.org" required>
+                </div>
+                <div class="mb-3" id="portFields">
+                    <label for="port" class="form-label">Port (optional, for IP or IPv6)</label>
+                    <input type="text" class="form-control" id="port" name="port" placeholder="e.g., 443">
+                </div>
+                <div class="mb-3">
+                    <label for="protocol_name" class="form-label">Protocol Name</label>
+                    <input type="text" class="form-control" id="protocol_name" name="protocol_name" placeholder="e.g., MARS" required>
+                </div>
+                <div class="mb-3">
+                    <label for="protocol_id" class="form-label">Protocol ID (optional, 1-65535)</label>
+                    <input type="number" class="form-control" id="protocol_id" name="protocol_id" min="1" max="65535" placeholder="e.g., 800">
+                </div>
+                <button type="submit" class="btn btn-primary">Add Protocol and Verify</button>
+            </form>
+        </div>
+        <div id="results">
+            <h3>Verification Results</h3>
+            <p>Packet flows captured by ndpiReader:</p>
+            <pre id="jsonOutput">No results yet. Submit the form to capture flows.</pre>
+        </div>
+    </div>
+
+    <!-- Success Modal -->
+    <div class="modal fade" id="successModal" tabindex="-1" aria-labelledby="successModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="successModalLabel">Protocol Added</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <span id="successMessage"></span>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" data-bs-dismiss="modal">OK</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function toggleFields() {
+            const format = document.getElementById('format').value;
+            document.getElementById('portFields').style.display = (format === 'ip' || format === 'ipv6') ? 'block' : 'none';
+        }
+
+        document.getElementById('protocolForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const outputElement = document.getElementById('jsonOutput');
+            try {
+                const response = await fetch(e.target.action, {
+                    method: 'POST',
+                    body: formData,
+                    headers: { 'X-CSRFToken': formData.get('csrfmiddlewaretoken') }
+                });
+                const result = await response.json();
+                if (result.success) {
+                    const modal = new bootstrap.Modal(document.getElementById('successModal'));
+                    document.getElementById('successMessage').textContent = result.message;
+                    modal.show();
+                }
+                if (result.error) {
+                    outputElement.textContent = `Error: ${result.error}`;
+                    outputElement.style.color = 'red';
+                } else {
+                    outputElement.textContent = JSON.stringify(result.flows, null, 2) || 'No flows captured.';
+                    outputElement.style.color = 'black';
+                }
+            } catch (error) {
+                outputElement.textContent = `Error: ${error.message}`;
+                outputElement.style.color = 'red';
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,188 @@
+{% extends "base.html" %}
+
+{% block title %}System Information{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-6">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h4>Hardware Information</h4>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <tbody>
+                            <tr>
+                                <th>Model</th>
+                                <td>{{ hardware.model }}</td>
+                            </tr>
+                            <tr>
+                                <th>Serial Number</th>
+                                <td>{{ hardware.serial }}</td>
+                            </tr>
+                            <tr>
+                                <th>CPU</th>
+                                <td>{{ hardware.cpu }}</td>
+                            </tr>
+                            <tr>
+                                <th>CPU Cores</th>
+                                <td>{{ hardware.cores }}</td>
+                            </tr>
+                            <tr>
+                                <th>Memory</th>
+                                <td>{{ hardware.memory }}</td>
+                            </tr>
+                            <tr>
+                                <th>Storage</th>
+                                <td>{{ hardware.storage }}</td>
+                            </tr>
+                            <tr>
+                                <th>Uptime</th>
+                                <td>{{ hardware.uptime }}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h4>Software Information</h4>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <tbody>
+                            <tr>
+                                <th>OS</th>
+                                <td>{{ software.os }}</td>
+                            </tr>
+                            <tr>
+                                <th>Kernel</th>
+                                <td>{{ software.kernel }}</td>
+                            </tr>
+                            <tr>
+                                <th>SD-WAN Version</th>
+                                <td>{{ software.sdwan_version }}</td>
+                            </tr>
+                            <tr>
+                                <th>Last Updated</th>
+                                <td>{{ software.last_updated }}</td>
+                            </tr>
+                            <tr>
+                                <th>License</th>
+                                <td>
+                                    {% if software.license_valid %}
+                                    <span class="badge bg-success">Valid</span>
+                                    {% else %}
+                                    <span class="badge bg-danger">Invalid</span>
+                                    {% endif %}
+                                    (Expires: {{ software.license_expiry }})
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-6">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h4>CPU Usage</h4>
+            </div>
+            <div class="card-body">
+                <div class="progress mb-2">
+                    <div class="progress-bar bg-danger" role="progressbar" 
+                         style="width: {{ cpu_usage }}%" 
+                         aria-valuenow="{{ cpu_usage }}" 
+                         aria-valuemin="0" 
+                         aria-valuemax="100">
+                        {{ cpu_usage }}%
+                    </div>
+                </div>
+                <div class="row">
+                    {% for core in cpu_cores %}
+                    <div class="col-sm-6 mb-2">
+                        <small>Core {{ forloop.counter }}</small>
+                        <div class="progress" style="height: 10px;">
+                            <div class="progress-bar bg-info" role="progressbar" 
+                                 style="width: {{ core }}%" 
+                                 aria-valuenow="{{ core }}" 
+                                 aria-valuemin="0" 
+                                 aria-valuemax="100">
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h4>Memory Usage</h4>
+            </div>
+            <div class="card-body">
+                <div class="progress mb-2">
+                    <div class="progress-bar bg-warning" role="progressbar" 
+                         style="width: {{ memory_usage }}%" 
+                         aria-valuenow="{{ memory_usage }}" 
+                         aria-valuemin="0" 
+                         aria-valuemax="100">
+                        {{ memory_usage }}%
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-6">
+                        <small>Used: {{ memory_used }} MB</small>
+                    </div>
+                    <div class="col-6 text-end">
+                        <small>Total: {{ memory_total }} MB</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <h4>Disk Usage</h4>
+    </div>
+    <div class="card-body">
+        {% for disk in disks %}
+        <div class="mb-3">
+            <h5>{{ disk.mount }}</h5>
+            <div class="progress mb-2">
+                <div class="progress-bar bg-{% if disk.percent > 90 %}danger{% elif disk.percent > 70 %}warning{% else %}success{% endif %}" 
+                     role="progressbar" 
+                     style="width: {{ disk.percent }}%" 
+                     aria-valuenow="{{ disk.percent }}" 
+                     aria-valuemin="0" 
+                     aria-valuemax="100">
+                    {{ disk.percent }}%
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-6">
+                    <small>Used: {{ disk.used }} GB</small>
+                </div>
+                <div class="col-6 text-end">
+                    <small>Total: {{ disk.total }} GB</small>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

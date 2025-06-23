@@ -1,0 +1,115 @@
+{% extends "base.html" %}
+
+{% block title %}Add Custom Protocol{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1>Add Custom Protocol</h1>
+    <p>Add a new protocol to be detected by nDPI.</p>
+    <div class="form-section mb-4">
+        <form id="protocolForm" action="{% url 'services:add_protocol' %}" method="POST">
+            {% csrf_token %}
+            <div class="mb-3">
+                <label for="format" class="form-label">Protocol Format</label>
+                <select class="form-select" id="format" name="format" onchange="toggleFields()" required>
+                    <option value="" disabled selected>Select a format</option>
+                    <option value="ip">IP-based (e.g., ip:221.171.85.28@MARS)</option>
+                    <option value="port">Port-based (e.g., tcp:81,tcp:8181@HTTP)</option>
+                    <option value="hostname">Hostname-based (e.g., host:"ntop.org"@ntop)</option>
+                    <option value="ip_hostname">IP/Hostname (e.g., ip:www.ntop.org@ntop)</option>
+                    <option value="ipv6">IPv6-based (e.g., ipv6:[fe80::1]@Custom)</option>
+                </select>
+                <div id="formatError" class="error-message"></div>
+            </div>
+            <div class="mb-3">
+                <label for="value" class="form-label">Value (e.g., IP, Port, Hostname)</label>
+                <input type="text" class="form-control" id="value" name="value" placeholder="e.g., 221.171.85.28 or tcp:81,tcp:8181 or ntop.org" required>
+                <div id="valueError" class="error-message"></div>
+            </div>
+            <div class="mb-3" id="portFields" style="display:none;">
+                <label for="port" class="form-label">Port (optional, for IP or IPv6)</label>
+                <input type="text" class="form-control" id="port" name="port" placeholder="e.g., 443">
+                <div id="portError" class="error-message"></div>
+            </div>
+            <div class="mb-3">
+                <label for="protocol_name" class="form-label">Protocol Name</label>
+                <input type="text" class="form-control" id="protocol_name" name="protocol_name" placeholder="e.g., MARS" required>
+                <div id="protocolNameError" class="error-message"></div>
+            </div>
+            <div class="mb-3">
+                <label for="protocol_id" class="form-label">Protocol ID (optional, 1-65535)</label>
+                <input type="number" class="form-control" id="protocol_id" name="protocol_id" min="1" max="65535" placeholder="e.g., 800">
+                <div id="protocolIdError" class="error-message"></div>
+            </div>
+            <button type="submit" class="btn btn-primary" id="submitButton">Add Protocol</button>
+        </form>
+    </div>
+    <div class="table-section">
+        <h3>Existing Protocols</h3>
+        {% if protocols %}
+            <table class="table table-bordered">
+                <thead>
+                    <tr>
+                        <th>Protocol</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for protocol in protocols %}
+                        <tr>
+                            <td>{{ protocol }}</td>
+                            <td>
+                                <button class="btn btn-danger btn-sm delete-protocol" data-protocol="{{ protocol }}">Delete</button>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <p>No custom protocols found.</p>
+        {% endif %}
+    </div>
+    <!-- Success Modal -->
+    <div class="modal fade" id="successModal" tabindex="-1" aria-labelledby="successModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="successModalLabel">Success</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <span id="successMessage"></span>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" data-bs-dismiss="modal">OK</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Delete Confirmation Modal -->
+    <div class="modal fade" id="deleteConfirmModal" tabindex="-1" aria-labelledby="deleteConfirmModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="deleteConfirmModalLabel">Confirm Deletion</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    Are you sure you want to delete the protocol "<span id="deleteProtocolName"></span>"?
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-danger" id="confirmDelete">Delete</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+    function toggleFields() {
+        const format = document.getElementById('format').value;
+        document.getElementById('portFields').style.display = (format === 'ip' || format === 'ipv6') ? 'block' : 'none';
+    }
+    // Add AJAX and modal logic as in the original template if needed
+</script>
+{% endblock %} 

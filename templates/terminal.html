@@ -1,0 +1,414 @@
+{% extends "base.html" %}
+{% load crispy_forms_tags %}
+
+{% block title %}Terminal{% endblock %}
+
+{% block extra_css %}
+<style>
+    .terminal-container {
+        background-color: #1e1e1e;
+        border-radius: 8px;
+        padding: 1rem;
+        height: calc(100vh - 200px);
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .terminal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 1px solid #333;
+    }
+    
+    .terminal-title {
+        color: #fff;
+        margin: 0;
+        font-size: 1.1rem;
+    }
+    
+    .terminal-controls {
+        display: flex;
+        gap: 0.5rem;
+    }
+    
+    .terminal-controls button {
+        background: none;
+        border: none;
+        color: #fff;
+        padding: 0.25rem 0.5rem;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: background-color 0.2s;
+    }
+    
+    .terminal-controls button:hover {
+        background-color: #333;
+    }
+    
+    .terminal-window {
+        flex: 1;
+        background-color: #000;
+        border-radius: 4px;
+        padding: 1rem;
+        font-family: 'Consolas', 'Monaco', monospace;
+        color: #fff;
+        overflow-y: auto;
+        position: relative;
+    }
+    
+    .terminal-output {
+        white-space: pre-wrap;
+        word-wrap: break-word;
+        margin-bottom: 1rem;
+    }
+    
+    .terminal-input-line {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
+    .terminal-prompt {
+        color: #0f0;
+    }
+    
+    .terminal-input {
+        flex: 1;
+        background: none;
+        border: none;
+        color: #fff;
+        font-family: inherit;
+        font-size: inherit;
+        outline: none;
+    }
+    
+    .terminal-suggestions {
+        position: absolute;
+        bottom: 100%;
+        left: 0;
+        right: 0;
+        background-color: #2d2d2d;
+        border-radius: 4px;
+        max-height: 200px;
+        overflow-y: auto;
+        display: none;
+    }
+    
+    .terminal-suggestion {
+        padding: 0.5rem 1rem;
+        cursor: pointer;
+    }
+    
+    .terminal-suggestion:hover {
+        background-color: #3d3d3d;
+    }
+    
+    .terminal-suggestion.active {
+        background-color: #4d4d4d;
+    }
+    
+    .terminal-status {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        color: #888;
+        font-size: 0.9rem;
+        margin-top: 0.5rem;
+    }
+    
+    .terminal-status-indicator {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background-color: #0f0;
+    }
+    
+    .terminal-status-indicator.disconnected {
+        background-color: #f00;
+    }
+    
+    .terminal-history {
+        position: absolute;
+        top: 0;
+        right: 0;
+        bottom: 0;
+        width: 300px;
+        background-color: #2d2d2d;
+        border-left: 1px solid #333;
+        padding: 1rem;
+        transform: translateX(100%);
+        transition: transform 0.3s;
+    }
+    
+    .terminal-history.visible {
+        transform: translateX(0);
+    }
+    
+    .terminal-history-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 1px solid #333;
+    }
+    
+    .terminal-history-title {
+        color: #fff;
+        margin: 0;
+        font-size: 1rem;
+    }
+    
+    .terminal-history-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+    
+    .terminal-history-item {
+        padding: 0.5rem;
+        cursor: pointer;
+        border-radius: 4px;
+    }
+    
+    .terminal-history-item:hover {
+        background-color: #3d3d3d;
+    }
+    
+    .terminal-history-item.active {
+        background-color: #4d4d4d;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="terminal-container">
+    <div class="terminal-header">
+        <h4 class="terminal-title">System Terminal</h4>
+        <div class="terminal-controls">
+            <button id="clearTerminal" title="Clear Terminal">
+                <i class="fas fa-trash"></i>
+            </button>
+            <button id="toggleHistory" title="Command History">
+                <i class="fas fa-history"></i>
+            </button>
+            <button id="copyOutput" title="Copy Output">
+                <i class="fas fa-copy"></i>
+            </button>
+            <button id="downloadOutput" title="Download Output">
+                <i class="fas fa-download"></i>
+            </button>
+        </div>
+    </div>
+    
+    <div class="terminal-window" id="terminalWindow">
+        <div class="terminal-output" id="terminalOutput"></div>
+        <div class="terminal-input-line">
+            <span class="terminal-prompt">$</span>
+            <input type="text" class="terminal-input" id="terminalInput" autofocus>
+        </div>
+        <div class="terminal-suggestions" id="terminalSuggestions"></div>
+    </div>
+    
+    <div class="terminal-status">
+        <div class="terminal-status-indicator" id="connectionStatus"></div>
+        <span id="statusText">Connected</span>
+    </div>
+    
+    <div class="terminal-history" id="terminalHistory">
+        <div class="terminal-history-header">
+            <h5 class="terminal-history-title">Command History</h5>
+            <button id="closeHistory" class="btn btn-sm btn-outline-light">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <ul class="terminal-history-list" id="historyList"></ul>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const terminalWindow = document.getElementById('terminalWindow');
+    const terminalOutput = document.getElementById('terminalOutput');
+    const terminalInput = document.getElementById('terminalInput');
+    const terminalSuggestions = document.getElementById('terminalSuggestions');
+    const connectionStatus = document.getElementById('connectionStatus');
+    const statusText = document.getElementById('statusText');
+    const historyList = document.getElementById('historyList');
+    const terminalHistory = document.getElementById('terminalHistory');
+    
+    let commandHistory = [];
+    let currentHistoryIndex = -1;
+    let ws = null;
+    
+    // Initialize WebSocket connection
+    function initWebSocket() {
+        ws = new WebSocket(`ws://${window.location.host}/ws/terminal/`);
+        
+        ws.onopen = function() {
+            connectionStatus.classList.remove('disconnected');
+            statusText.textContent = 'Connected';
+            appendOutput('Connected to terminal server...\n');
+        };
+        
+        ws.onclose = function() {
+            connectionStatus.classList.add('disconnected');
+            statusText.textContent = 'Disconnected';
+            appendOutput('\nDisconnected from terminal server. Reconnecting...\n');
+            setTimeout(initWebSocket, 1000);
+        };
+        
+        ws.onmessage = function(e) {
+            appendOutput(e.data);
+        };
+        
+        ws.onerror = function(e) {
+            appendOutput('\nError: ' + e.message + '\n');
+        };
+    }
+    
+    // Append text to terminal output
+    function appendOutput(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        terminalOutput.appendChild(div);
+        terminalWindow.scrollTop = terminalWindow.scrollHeight;
+    }
+    
+    // Handle command input
+    terminalInput.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') {
+            const command = terminalInput.value.trim();
+            if (command) {
+                appendOutput('$ ' + command);
+                ws.send(command);
+                addToHistory(command);
+                terminalInput.value = '';
+            }
+        } else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            navigateHistory('up');
+        } else if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            navigateHistory('down');
+        } else if (e.key === 'Tab') {
+            e.preventDefault();
+            showCommandSuggestions(terminalInput.value);
+        }
+    });
+    
+    // Add command to history
+    function addToHistory(command) {
+        commandHistory.unshift(command);
+        if (commandHistory.length > 100) {
+            commandHistory.pop();
+        }
+        updateHistoryList();
+    }
+    
+    // Update history list display
+    function updateHistoryList() {
+        historyList.innerHTML = '';
+        commandHistory.forEach((cmd, index) => {
+            const li = document.createElement('li');
+            li.className = 'terminal-history-item';
+            li.textContent = cmd;
+            li.onclick = () => {
+                terminalInput.value = cmd;
+                terminalInput.focus();
+            };
+            historyList.appendChild(li);
+        });
+    }
+    
+    // Navigate through command history
+    function navigateHistory(direction) {
+        if (direction === 'up' && currentHistoryIndex < commandHistory.length - 1) {
+            currentHistoryIndex++;
+        } else if (direction === 'down' && currentHistoryIndex > -1) {
+            currentHistoryIndex--;
+        }
+        
+        if (currentHistoryIndex === -1) {
+            terminalInput.value = '';
+        } else {
+            terminalInput.value = commandHistory[currentHistoryIndex];
+        }
+    }
+    
+    // Show command suggestions
+    function showCommandSuggestions(prefix) {
+        const commonCommands = [
+            'ls', 'cd', 'pwd', 'mkdir', 'rm', 'cp', 'mv',
+            'cat', 'grep', 'find', 'ps', 'top', 'netstat',
+            'ifconfig', 'ping', 'ssh', 'scp', 'tar', 'gzip'
+        ];
+        
+        const suggestions = commonCommands.filter(cmd => 
+            cmd.startsWith(prefix.toLowerCase())
+        );
+        
+        if (suggestions.length > 0) {
+            terminalSuggestions.innerHTML = '';
+            suggestions.forEach(cmd => {
+                const div = document.createElement('div');
+                div.className = 'terminal-suggestion';
+                div.textContent = cmd;
+                div.onclick = () => {
+                    terminalInput.value = cmd;
+                    terminalSuggestions.style.display = 'none';
+                    terminalInput.focus();
+                };
+                terminalSuggestions.appendChild(div);
+            });
+            terminalSuggestions.style.display = 'block';
+        } else {
+            terminalSuggestions.style.display = 'none';
+        }
+    }
+    
+    // Clear terminal
+    document.getElementById('clearTerminal').onclick = function() {
+        terminalOutput.innerHTML = '';
+    };
+    
+    // Toggle history panel
+    document.getElementById('toggleHistory').onclick = function() {
+        terminalHistory.classList.toggle('visible');
+    };
+    
+    // Close history panel
+    document.getElementById('closeHistory').onclick = function() {
+        terminalHistory.classList.remove('visible');
+    };
+    
+    // Copy terminal output
+    document.getElementById('copyOutput').onclick = function() {
+        const text = terminalOutput.textContent;
+        navigator.clipboard.writeText(text).then(() => {
+            appendOutput('\nOutput copied to clipboard.\n');
+        });
+    };
+    
+    // Download terminal output
+    document.getElementById('downloadOutput').onclick = function() {
+        const text = terminalOutput.textContent;
+        const blob = new Blob([text], { type: 'text/plain' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'terminal-output.txt';
+        a.click();
+        URL.revokeObjectURL(url);
+    };
+    
+    // Initialize WebSocket connection
+    initWebSocket();
+});
+</script>
+{% endblock %} 

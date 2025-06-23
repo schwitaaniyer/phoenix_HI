@@ -1,0 +1,244 @@
+{% extends "base.html" %}
+{% load crispy_forms_tags %}
+
+{% block title %}VPN Configuration{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-6">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h4>VPN Server Configuration</h4>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    <input type="hidden" name="form_type" value="server_config">
+                    {{ server_form|crispy }}
+                    <button type="submit" class="btn btn-primary">Save Server Configuration</button>
+                </form>
+            </div>
+        </div>
+        
+        <div class="card mb-4">
+            <div class="card-header">
+                <h4>VPN Service Control</h4>
+            </div>
+            <div class="card-body">
+                <div class="btn-group w-100">
+                    <button class="btn btn-primary" id="startVpn">Start VPN</button>
+                    <button class="btn btn-warning" id="restartVpn">Restart VPN</button>
+                    <button class="btn btn-danger" id="stopVpn">Stop VPN</button>
+                </div>
+                <div class="mt-3">
+                    <h5>Service Status</h5>
+                    <pre>{{ service_status }}</pre>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h4>VPN Clients</h4>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Client</th>
+                                <th>Status</th>
+                                <th>IP Address</th>
+                                <th>Connected Since</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for client in clients %}
+                            <tr>
+                                <td>{{ client.name }}</td>
+                                <td>
+                                    <span class="badge bg-{% if client.status == 'connected' %}success{% else %}danger{% endif %}">
+                                        {{ client.status }}
+                                    </span>
+                                </td>
+                                <td>{{ client.ip }}</td>
+                                <td>{{ client.connected }}</td>
+                                <td>
+                                    <div class="btn-group btn-group-sm">
+                                        <button class="btn btn-primary" 
+                                                data-bs-toggle="modal" 
+                                                data-bs-target="#editClientModal"
+                                                data-client-id="{{ client.id }}"
+                                                data-client-name="{{ client.name }}"
+                                                data-client-ip="{{ client.ip }}">
+                                            Edit
+                                        </button>
+                                        <button class="btn btn-danger revoke-client" data-client-id="{{ client.id }}">Revoke</button>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="5" class="text-center">No VPN clients configured</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                <button class="btn btn-primary mt-3" data-bs-toggle="modal" data-bs-target="#newClientModal">
+                    Add New Client
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- New Client Modal -->
+<div class="modal fade" id="newClientModal" tabindex="-1" aria-labelledby="newClientModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="newClientModalLabel">Add New VPN Client</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="newClientForm" method="post">
+                <div class="modal-body">
+                    {% csrf_token %}
+                    <input type="hidden" name="form_type" value="new_client">
+                    {{ client_form|crispy }}
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="submit" class="btn btn-primary">Create Client</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Client Modal -->
+<div class="modal fade" id="editClientModal" tabindex="-1" aria-labelledby="editClientModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editClientModalLabel">Edit VPN Client</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="editClientForm" method="post">
+                <div class="modal-body">
+                    {% csrf_token %}
+                    <input type="hidden" name="form_type" value="edit_client">
+                    <input type="hidden" id="editClientId" name="client_id">
+                    {{ client_form|crispy }}
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="submit" class="btn btn-primary">Update Client</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+// VPN service operations
+document.getElementById('startVpn').addEventListener('click', function() {
+    if (confirm('Are you sure you want to start VPN service?')) {
+        fetch('/services/vpn/start/', {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('VPN service started successfully');
+                location.reload();
+            } else {
+                alert('Error starting VPN: ' + data.error);
+            }
+        });
+    }
+});
+
+document.getElementById('restartVpn').addEventListener('click', function() {
+    if (confirm('Are you sure you want to restart VPN service?')) {
+        fetch('/services/vpn/restart/', {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('VPN service restarted successfully');
+                location.reload();
+            } else {
+                alert('Error restarting VPN: ' + data.error);
+            }
+        });
+    }
+});
+
+document.getElementById('stopVpn').addEventListener('click', function() {
+    if (confirm('Are you sure you want to stop VPN service?')) {
+        fetch('/services/vpn/stop/', {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('VPN service stopped successfully');
+                location.reload();
+            } else {
+                alert('Error stopping VPN: ' + data.error);
+            }
+        });
+    }
+});
+
+// Client operations
+document.querySelectorAll('.revoke-client').forEach(button => {
+    button.addEventListener('click', function() {
+        const clientId = this.dataset.clientId;
+        if (confirm('Are you sure you want to revoke this client?')) {
+            fetch(`/services/vpn/client/${clientId}/revoke/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}',
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Client revoked successfully');
+                    location.reload();
+                } else {
+                    alert('Error revoking client: ' + data.error);
+                }
+            });
+        }
+    });
+});
+
+// Edit client modal setup
+document.getElementById('editClientModal').addEventListener('show.bs.modal', function(event) {
+    const button = event.relatedTarget;
+    const modal = this;
+    
+    modal.querySelector('#editClientId').value = button.dataset.clientId;
+    modal.querySelector('#id_name').value = button.dataset.clientName;
+    modal.querySelector('#id_ip').value = button.dataset.clientIp;
+});
+</script>
+{% endblock %}
+{% endblock %}

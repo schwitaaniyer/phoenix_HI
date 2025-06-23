@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Network Monitoring</title>
+</head>
+<body>
+    <h2>Set Sampling Interval</h2>
+    
+    <form id="configForm">
+        {% csrf_token %}  <!-- ✅ CSRF Token Added -->
+        <input type="number" id="celery_interval" placeholder="Enter interval in minutes" required>
+        <button type="submit">Save</button>
+    </form>
+
+    <p id="message"></p>
+
+    <script>
+        document.getElementById("configForm").addEventListener("submit", function(event) {
+            event.preventDefault(); // Prevent normal form submission
+            
+            let interval = document.getElementById("celery_interval").value;
+            let csrfToken = document.querySelector("[name=csrfmiddlewaretoken]").value; // ✅ Get CSRF token
+
+            fetch("/network_monitoring/save_config/", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-CSRFToken": csrfToken // ✅ Include CSRF token in request
+                },
+                body: JSON.stringify({ "celery_interval": interval })
+            })
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById("message").innerText = data.message || data.error;
+            })
+            .catch(error => console.error("Error:", error));
+        });
+    </script>
+</body>
+</html>

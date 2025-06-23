@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LTE Switching Decision</title>
+    <link rel="stylesheet" href="/static/css/common.css">
+    <style>
+        /* General Page Styling */
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #2c3e50;
+            color: #ecf0f1;
+            margin: 0;
+            padding: 0;
+        }
+
+        /* Navbar */
+        nav {
+            background: #1a252f;
+            color: #ecf0f1;
+            padding: 15px;
+            text-align: center;
+            font-size: 20px;
+            font-weight: bold;
+        }
+
+        /* Content Styling */
+        .content {
+            width: 85%;
+            margin: 20px auto;
+            padding: 20px;
+        }
+
+        /* Table Styling */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            background: #34495e;
+            color: #ecf0f1;
+            border-radius: 8px;
+        }
+
+        td, th {
+            padding: 12px;
+            text-align: center;
+            border-bottom: 1px solid #7f8c8d;
+        }
+
+        th {
+            background: #1a252f;
+        }
+
+        /* Table Rows */
+        tbody tr:nth-child(odd) {
+            background: #3d566e;
+        }
+
+        tbody tr:nth-child(even) {
+            background: #2c3e50;
+        }
+
+        /* Headings */
+        h3 {
+            background: #1a252f;
+            padding: 10px;
+            color: #ecf0f1;
+            text-align: center;
+            border-radius: 5px;
+        }
+
+        /* Final Decision */
+        .final-decision {
+            background: #2980b9;
+            padding: 15px;
+            text-align: center;
+            font-size: 18px;
+            font-weight: bold;
+            color: #fff;
+            border-radius: 5px;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Navbar -->
+    <nav>
+        LTE Switching Decision
+    </nav>
+
+    <div class="content">
+
+        <!-- Calculated Indices Table -->
+        <h3>Calculated Indices</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Timestamp</th><th>LTE Type</th><th>RSRP</th><th>RSRP Index</th>
+                    <th>RSRQ</th><th>RSRQ Index</th><th>SINR</th><th>SINR Index</th>
+                    <th>LQI</th><th>Link Condition</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in indices %}
+                <tr>
+                    <td>{{ row.timestamp }}</td><td>{{ row.lte_type }}</td>
+                    <td>{{ row.rsrp }}</td><td>{{ row.rsrp_index }}</td>
+                    <td>{{ row.rsrq }}</td><td>{{ row.rsrq_index }}</td>
+                    <td>{{ row.sinr }}</td><td>{{ row.sinr_index }}</td>
+                    <td>{{ row.lqi }}</td><td>{{ row.link_condition }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <!-- Switching Decision Table -->
+        <h3>Switching Decision</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>LTE Type</th><th>Avg LQI</th><th>Packet Loss (%)</th>
+                    <th>LQIa</th><th>PRL</th><th>SI</th><th>Decision</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in switching_result %}
+                <tr>
+                    <td>{{ row.lte_type }}</td><td>{{ row.avg_lqi }}</td>
+                    <td>{{ row.packet_loss }}%</td><td>{{ row.LQIa }}</td>
+                    <td>{{ row.PRL }}</td><td>{{ row.SI }}</td>
+                    <td>{{ switch_decision }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <!-- Final Decision -->
+        <div class="final-decision">
+            Overall Decision: {{ switch_decision }}
+        </div>
+
+    </div>
+
+</body>
+</html>

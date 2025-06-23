@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Routing Management</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f4f4f4;
+        }
+        h2 {
+            color: #333;
+            text-align: center;
+        }
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            margin-bottom: 20px;
+        }
+        th, td {
+            border: 1px solid #dddddd;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #4CAF50;
+            color: white;
+        }
+        tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
+        tr:hover {
+            background-color: #ddd;
+        }
+        .form-section {
+            margin-bottom: 30px;
+        }
+        .form-section h3 {
+            margin-bottom: 10px;
+        }
+        form {
+            display: flex;
+            flex-wrap: wrap;
+        }
+        label {
+            flex: 1 0 100px;
+            margin-bottom: 10px;
+        }
+        input[type="text"] {
+            flex: 3 0 200px;
+            padding: 6px;
+            margin-bottom: 10px;
+        }
+        button[type="submit"] {
+            flex: 1 0 100px;
+            padding: 10px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+            margin-right: 10px;
+        }
+        button[type="submit"]:hover {
+            background-color: #45a049;
+        }
+        .btn-advanced {
+            border: none;
+            /* border-radius: 50%; */
+            background-color: #4CAF50;
+            color: white;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            justify-content: center;
+            align-items: right;
+            cursor: pointer;
+        }
+        pre {
+            background-color: #fff;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <h2>Routing Management</h2>
+    
+    <div class="form-section">
+        {% if routing_table %}
+            <h3>Routing Table</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Destination</th>
+                        <th>Gateway</th>
+                        <th>Netmask</th>
+                        <th>Flags</th>
+                        <th>Metric</th>
+                        <th>Ref</th>
+                        <th>Use</th>
+                        <th>Iface</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for route in routing_table %}
+                        <tr>
+                            <td>{{ route.destination }}</td>
+                            <td>{{ route.gateway }}</td>
+                            <td>{{ route.genmask }}</td>
+                            <td>{{ route.flags }}</td>
+                            <td>{{ route.metric }}</td>
+                            <td>{{ route.ref }}</td>
+                            <td>{{ route.use }}</td>
+                            <td>{{ route.iface }}</td>
+                            <td>
+                                <form action="" method="post">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="action" value="delete_route">
+                                    <input type="hidden" name="destination" value="{{ route.destination }}">
+                                    <input type="hidden" name="netmask" value="{{ route.genmask }}">
+                                    <input type="hidden" name="gateway" value="{{ route.gateway }}">
+                                    <button type="submit">Delete</button>
+                                </form>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <p>No routes found.</p>
+        {% endif %}
+    </div>
+
+    <div class="form-section">
+        <h3>Add Route</h3>
+        <form action="" method="post">
+            {% csrf_token %}
+            <label for="destination">Destination:</label>
+            <input type="text" id="destination" name="destination" placeholder="Destination">
+            <label for="netmask">Netmask:</label>
+            <input type="text" id="netmask" name="netmask" placeholder="Netmask">
+            <label for="gateway">Gateway:</label>
+            <input type="text" id="gateway" name="gateway" placeholder="Gateway">
+            <button type="submit" name="action" value="add_route">Add Route</button>
+        </form>
+    </div>
+
+    <div class="form-section">
+    <h3>Traceroute</h3>
+    <form id="tracerouteForm" action="" method="post">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="traceroute">
+        <label for="target">Target:</label>
+        <input type="text" id="target" name="target" placeholder="Traceroute target">
+        <button type="submit">Traceroute</button>
+    </form>
+    {% if traceroute_output %}
+        <pre>{{ traceroute_output }}</pre>
+    {% endif %}
+</div>
+
+
+
+
+
+    <div class="form-section">
+        <h3>Advanced Routing</h3>
+        <!-- Form to Redirect to Services -->
+        <form action="{% url 'terminal' %}" method="get">
+            <button type="submit" class="btn-advanced">AR</button>
+        </form>
+        
+</body>
+</html>
