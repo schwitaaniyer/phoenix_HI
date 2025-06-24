@@ -31,28 +31,24 @@
                                         {{ tunnel.status }}
                                     </span>
                                 </td>
-                                <td>{{ tunnel.local }}</td>
-                                <td>{{ tunnel.remote }}</td>
+                                <td>{{ tunnel.local_address }}</td>
+                                <td>{{ tunnel.remote_address }}</td>
                                 <td>
                                     <div class="btn-group btn-group-sm">
                                         <button class="btn btn-primary" 
                                                 data-bs-toggle="modal" 
                                                 data-bs-target="#editTunnelModal"
-                                                data-tunnel-id="{{ tunnel.id }}"
                                                 data-tunnel-name="{{ tunnel.name }}"
-                                                data-tunnel-local="{{ tunnel.local }}"
-                                                data-tunnel-remote="{{ tunnel.remote }}"
-                                                data-tunnel-preshared="{{ tunnel.preshared }}"
-                                                data-tunnel-ike="{{ tunnel.ike }}"
-                                                data-tunnel-esp="{{ tunnel.esp }}">
+                                                data-tunnel-local="{{ tunnel.local_address }}"
+                                                data-tunnel-remote="{{ tunnel.remote_address }}">
                                             Edit
                                         </button>
                                         {% if tunnel.status == 'up' %}
-                                        <button class="btn btn-warning stop-tunnel" data-tunnel-id="{{ tunnel.id }}">Stop</button>
+                                        <button class="btn btn-warning stop-tunnel" data-tunnel-name="{{ tunnel.name }}">Stop</button>
                                         {% else %}
-                                        <button class="btn btn-success start-tunnel" data-tunnel-id="{{ tunnel.id }}">Start</button>
+                                        <button class="btn btn-success start-tunnel" data-tunnel-name="{{ tunnel.name }}">Start</button>
                                         {% endif %}
-                                        <button class="btn btn-danger delete-tunnel" data-tunnel-id="{{ tunnel.id }}">Delete</button>
+                                        <button class="btn btn-danger delete-tunnel" data-tunnel-name="{{ tunnel.name }}">Delete</button>
                                     </div>
                                 </td>
                             </tr>
@@ -116,7 +112,7 @@
 
 <!-- New Tunnel Modal -->
 <div class="modal fade" id="newTunnelModal" tabindex="-1" aria-labelledby="newTunnelModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
+    <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="newTunnelModalLabel">Add New IPSec Tunnel</h5>
@@ -126,7 +122,56 @@
                 <div class="modal-body">
                     {% csrf_token %}
                     <input type="hidden" name="form_type" value="new_tunnel">
-                    {{ tunnel_form|crispy }}
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            {{ tunnel_form.name|as_crispy_field }}
+                            {{ tunnel_form.local|as_crispy_field }}
+                            {{ tunnel_form.remote|as_crispy_field }}
+                            {{ tunnel_form.ike_version|as_crispy_field }}
+                            {{ tunnel_form.authentication_method|as_crispy_field }}
+                            
+                            <div class="psk-fields">
+                                {{ tunnel_form.preshared|as_crispy_field }}
+                                <button type="button" class="btn btn-secondary btn-sm" id="generatePsk">Generate PSK</button>
+                            </div>
+                            
+                            <div class="certificate-fields" style="display: none;">
+                                <div class="mb-3">
+                                    <label for="my_certificate">My Certificate</label>
+                                    <input type="file" class="form-control" id="my_certificate" name="my_certificate">
+                                </div>
+                                <div class="mb-3">
+                                    <label for="myca_certificate">CA Certificate</label>
+                                    <input type="file" class="form-control" id="myca_certificate" name="myca_certificate">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="card mb-3">
+                                <div class="card-header">
+                                    <h6 class="mb-0">Encryption Settings</h6>
+                                </div>
+                                <div class="card-body">
+                                    {{ tunnel_form.encryption_algorithm|as_crispy_field }}
+                                    {{ tunnel_form.key_length|as_crispy_field }}
+                                    {{ tunnel_form.hash_algo|as_crispy_field }}
+                                    {{ tunnel_form.dh_group|as_crispy_field }}
+                                </div>
+                            </div>
+                            
+                            <div class="card">
+                                <div class="card-header">
+                                    <h6 class="mb-0">Traffic Selectors</h6>
+                                </div>
+                                <div class="card-body">
+                                    {{ tunnel_form.local_ts|as_crispy_field }}
+                                    {{ tunnel_form.remote_ts|as_crispy_field }}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
@@ -139,7 +184,7 @@
 
 <!-- Edit Tunnel Modal -->
 <div class="modal fade" id="editTunnelModal" tabindex="-1" aria-labelledby="editTunnelModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
+    <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="editTunnelModalLabel">Edit IPSec Tunnel</h5>
@@ -149,8 +194,57 @@
                 <div class="modal-body">
                     {% csrf_token %}
                     <input type="hidden" name="form_type" value="edit_tunnel">
-                    <input type="hidden" id="editTunnelId" name="tunnel_id">
-                    {{ tunnel_form|crispy }}
+                    <input type="hidden" id="editTunnelName" name="original_name">
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            {{ tunnel_form.name|as_crispy_field }}
+                            {{ tunnel_form.local|as_crispy_field }}
+                            {{ tunnel_form.remote|as_crispy_field }}
+                            {{ tunnel_form.ike_version|as_crispy_field }}
+                            {{ tunnel_form.authentication_method|as_crispy_field }}
+                            
+                            <div class="psk-fields">
+                                {{ tunnel_form.preshared|as_crispy_field }}
+                                <button type="button" class="btn btn-secondary btn-sm" id="generatePskEdit">Generate PSK</button>
+                            </div>
+                            
+                            <div class="certificate-fields" style="display: none;">
+                                <div class="mb-3">
+                                    <label for="my_certificate_edit">My Certificate</label>
+                                    <input type="file" class="form-control" id="my_certificate_edit" name="my_certificate">
+                                </div>
+                                <div class="mb-3">
+                                    <label for="myca_certificate_edit">CA Certificate</label>
+                                    <input type="file" class="form-control" id="myca_certificate_edit" name="myca_certificate">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="card mb-3">
+                                <div class="card-header">
+                                    <h6 class="mb-0">Encryption Settings</h6>
+                                </div>
+                                <div class="card-body">
+                                    {{ tunnel_form.encryption_algorithm|as_crispy_field }}
+                                    {{ tunnel_form.key_length|as_crispy_field }}
+                                    {{ tunnel_form.hash_algo|as_crispy_field }}
+                                    {{ tunnel_form.dh_group|as_crispy_field }}
+                                </div>
+                            </div>
+                            
+                            <div class="card">
+                                <div class="card-header">
+                                    <h6 class="mb-0">Traffic Selectors</h6>
+                                </div>
+                                <div class="card-body">
+                                    {{ tunnel_form.local_ts|as_crispy_field }}
+                                    {{ tunnel_form.remote_ts|as_crispy_field }}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
@@ -166,8 +260,8 @@
 // Tunnel operations
 document.querySelectorAll('.start-tunnel').forEach(button => {
     button.addEventListener('click', function() {
-        const tunnelId = this.dataset.tunnelId;
-        fetch(`/services/ipsec/tunnel/${tunnelId}/start/`, {
+        const tunnelName = this.dataset.tunnelName;
+        fetch(`/services/ipsec/tunnel/${tunnelName}/start/`, {
             method: 'POST',
             headers: {
                 'X-CSRFToken': '{{ csrf_token }}',
@@ -187,8 +281,8 @@ document.querySelectorAll('.start-tunnel').forEach(button => {
 
 document.querySelectorAll('.stop-tunnel').forEach(button => {
     button.addEventListener('click', function() {
-        const tunnelId = this.dataset.tunnelId;
-        fetch(`/services/ipsec/tunnel/${tunnelId}/stop/`, {
+        const tunnelName = this.dataset.tunnelName;
+        fetch(`/services/ipsec/tunnel/${tunnelName}/stop/`, {
             method: 'POST',
             headers: {
                 'X-CSRFToken': '{{ csrf_token }}',
@@ -208,9 +302,9 @@ document.querySelectorAll('.stop-tunnel').forEach(button => {
 
 document.querySelectorAll('.delete-tunnel').forEach(button => {
     button.addEventListener('click', function() {
-        const tunnelId = this.dataset.tunnelId;
+        const tunnelName = this.dataset.tunnelName;
         if (confirm('Are you sure you want to delete this tunnel?')) {
-            fetch(`/services/ipsec/tunnel/${tunnelId}/delete/`, {
+            fetch(`/services/ipsec/tunnel/${tunnelName}/delete/`, {
                 method: 'POST',
                 headers: {
                     'X-CSRFToken': '{{ csrf_token }}',
@@ -295,13 +389,54 @@ document.getElementById('editTunnelModal').addEventListener('show.bs.modal', fun
     const button = event.relatedTarget;
     const modal = this;
     
-    modal.querySelector('#editTunnelId').value = button.dataset.tunnelId;
+    modal.querySelector('#editTunnelName').value = button.dataset.tunnelName;
     modal.querySelector('#id_name').value = button.dataset.tunnelName;
     modal.querySelector('#id_local').value = button.dataset.tunnelLocal;
     modal.querySelector('#id_remote').value = button.dataset.tunnelRemote;
-    modal.querySelector('#id_preshared').value = button.dataset.tunnelPreshared;
-    modal.querySelector('#id_ike').value = button.dataset.tunnelIke;
-    modal.querySelector('#id_esp').value = button.dataset.tunnelEsp;
+});
+
+// Authentication method toggle
+function toggleAuthFields(select) {
+    const pskFields = select.closest('form').querySelector('.psk-fields');
+    const certFields = select.closest('form').querySelector('.certificate-fields');
+    
+    if (select.value === 'Mutual PSK') {
+        pskFields.style.display = 'block';
+        certFields.style.display = 'none';
+    } else {
+        pskFields.style.display = 'none';
+        certFields.style.display = 'block';
+    }
+}
+
+document.querySelectorAll('[name="authentication_method"]').forEach(select => {
+    select.addEventListener('change', function() {
+        toggleAuthFields(this);
+    });
+});
+
+// PSK Generation
+function generatePsk(pskField) {
+    fetch('/services/ipsec/generate-psk/', {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': '{{ csrf_token }}',
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.psk) {
+            pskField.value = data.psk;
+        }
+    });
+}
+
+document.getElementById('generatePsk').addEventListener('click', function() {
+    generatePsk(document.querySelector('#newTunnelForm [name="preshared"]'));
+});
+
+document.getElementById('generatePskEdit').addEventListener('click', function() {
+    generatePsk(document.querySelector('#editTunnelForm [name="preshared"]'));
 });
 </script>
 {% endblock %}

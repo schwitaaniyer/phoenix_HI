@@ -1,0 +1,24 @@
+{
+    "sampling_interval": 2,
+    "test_repetition": 12,
+    "num_instances": 5,
+    "packets_per_test": 100,
+    "num_test_instances": 5,
+    "time_between": 1,
+    "loss_threshold": 5.0,
+    "network_interface": "enx224",
+    "test_ips": [
+        {
+            "type": "LTE1",
+            "ip": "8.8.8.8"
+        },
+        {
+            "type": "LTE2",
+            "ip": "8.8.4.4"
+        }
+    ],
+    "latency_enabled": false,
+    "latency_threshold": 5,
+    "jitter_enabled": false,
+    "jitter_threshold": 1
+}

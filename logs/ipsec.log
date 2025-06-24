@@ -1,0 +1,38 @@
+2025-06-24 08:24:01,707 - INFO - Starting IPsec view processing
+2025-06-24 08:24:01,707 - INFO - Checking IPsec service status
+2025-06-24 08:24:43,100 - INFO - Starting IPsec view processing
+2025-06-24 08:24:43,100 - INFO - Checking IPsec service status
+2025-06-24 08:24:44,836 - INFO - Starting IPsec view processing
+2025-06-24 08:24:44,837 - INFO - Checking IPsec service status
+2025-06-24 08:24:50,757 - INFO - Starting IPsec view processing
+2025-06-24 08:24:50,757 - INFO - Checking IPsec service status
+2025-06-24 08:24:55,362 - INFO - Starting IPsec view processing
+2025-06-24 08:24:55,362 - INFO - Checking IPsec service status
+2025-06-24 08:24:56,079 - INFO - Starting IPsec view processing
+2025-06-24 08:24:56,079 - INFO - Checking IPsec service status
+2025-06-24 08:25:20,772 - INFO - Starting IPsec view processing
+2025-06-24 08:25:20,772 - INFO - Checking IPsec service status
+2025-06-24 08:25:23,966 - INFO - Starting IPsec view processing
+2025-06-24 08:25:23,967 - INFO - Checking IPsec service status
+2025-06-24 08:25:24,226 - INFO - Starting IPsec view processing
+2025-06-24 08:25:24,226 - INFO - Checking IPsec service status
+2025-06-24 08:25:24,478 - INFO - Starting IPsec view processing
+2025-06-24 08:25:24,478 - INFO - Checking IPsec service status
+2025-06-24 08:29:16,058 - INFO - Starting IPsec view processing
+2025-06-24 08:29:16,058 - INFO - Checking IPsec service status
+2025-06-24 08:29:50,668 - INFO - Starting IPsec view processing
+2025-06-24 08:29:50,669 - INFO - Checking IPsec service status
+2025-06-24 08:29:55,675 - ERROR - Service status check timed out after 5 seconds
+2025-06-24 08:29:55,677 - INFO - Service status check took 5.01 seconds
+2025-06-24 08:29:55,677 - INFO - Starting swanctl.conf parsing
+2025-06-24 08:29:55,679 - INFO - Config parsing completed in 0.00 seconds
+2025-06-24 08:29:55,679 - INFO - Config parsing took 0.00 seconds
+2025-06-24 08:29:55,679 - INFO - Total view processing took 5.01 seconds
+2025-06-24 08:30:36,807 - INFO - Starting IPsec view processing
+2025-06-24 08:30:36,807 - INFO - Checking IPsec service status
+2025-06-24 08:30:41,814 - ERROR - Service status check timed out after 5 seconds
+2025-06-24 08:30:41,815 - INFO - Service status check took 5.01 seconds
+2025-06-24 08:30:41,815 - INFO - Starting swanctl.conf parsing
+2025-06-24 08:30:41,815 - INFO - Config parsing completed in 0.00 seconds
+2025-06-24 08:30:41,815 - INFO - Config parsing took 0.00 seconds
+2025-06-24 08:30:41,815 - INFO - Total view processing took 5.01 seconds

@@ -6,6 +6,13 @@ app_name = 'services'
 urlpatterns = [
     # IPSec Services
     path('ipsec/', views.IPsecView.as_view(), name='ipsec'),
+    path('ipsec/tunnel/<str:name>/start/', views.IPsecView.as_view(), name='start_tunnel'),
+    path('ipsec/tunnel/<str:name>/stop/', views.IPsecView.as_view(), name='stop_tunnel'),
+    path('ipsec/tunnel/<str:name>/delete/', views.IPsecView.as_view(), name='delete_tunnel'),
+    path('ipsec/restart/', views.IPsecView.as_view(), name='restart_ipsec'),
+    path('ipsec/reload/', views.IPsecView.as_view(), name='reload_ipsec'),
+    path('ipsec/stop/', views.IPsecView.as_view(), name='stop_ipsec'),
+    path('ipsec/generate-psk/', views.generate_psk, name='generate_psk'),
     
     # VPN Services
     path('vpn/', views.VPNView.as_view(), name='vpn'),

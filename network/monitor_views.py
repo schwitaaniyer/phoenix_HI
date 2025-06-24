@@ -28,23 +28,97 @@ def monitor_config_view(request):
 # Example: Dashboard/Analysis view
 
 def monitor_analysis_view(request):
-    # Fetch latest actual values
-    lte1_actual = RFParameters.objects.filter(lte_type='LTE1').order_by('-timestamp').first()
-    lte2_actual = RFParameters.objects.filter(lte_type='LTE2').order_by('-timestamp').first()
-    # Fetch predicted parameters (stub)
-    lte1_pred = PredictedParameters.objects.filter(lte_type='LTE1').order_by('-timestamp').first()
-    lte2_pred = PredictedParameters.objects.filter(lte_type='LTE2').order_by('-timestamp').first()
-    # Fetch recommended action (stub)
-    recommended_action = 'No Switch'  # Replace with logic
-    context = {
-        'lte1_actual': lte1_actual,
-        'lte2_actual': lte2_actual,
-        'lte1_pred': lte1_pred,
-        'lte2_pred': lte2_pred,
-        'recommended_action': recommended_action,
-        'last_updated': timezone.now()
+    # --- RF Parameters (Real-Time) ---
+    rf_qs = RFParameters.objects.all().order_by('-timestamp')[:50]
+    rf_params = [
+        {
+            'timestamp': r.timestamp.strftime('%Y-%m-%d %H:%M:%S'),
+            'lte_type': r.lte_type,
+            'rsrp': r.rsrp,
+            'rsrp_index': getattr(r, 'rsrp_index', 0.25),
+            'rsrq': r.rsrq,
+            'rsrq_index': getattr(r, 'rsrq_index', 0.25),
+            'sinr': r.sinr,
+            'lqi': getattr(r, 'lqi', 0.75),
+            'link_condition': getattr(r, 'link_condition', 'Excellent'),
+        }
+        for r in rf_qs
+    ]
+
+    # --- Predicted LTE Parameters ---
+    pred_qs = PredictedParameters.objects.all().order_by('-timestamp')[:50]
+    pred_params = [
+        {
+            'timestamp': p.timestamp.strftime('%Y-%m-%d %H:%M:%S'),
+            'lte_type': p.lte_type,
+            'rsrp': getattr(p, 'predicted_rsrp', ''),
+            'rsrp_index': 0.25,
+            'rsrq': getattr(p, 'predicted_rsrq', ''),
+            'rsrq_index': 0.25,
+            'sinr': getattr(p, 'predicted_sinr', ''),
+            'lqi': 0.75,
+            'link_condition': 'Excellent',
+        }
+        for p in pred_qs
+    ]
+
+    # --- Recommended Action Table ---
+    # Dummy/sample logic for now
+    rec_actions = [
+        {
+            'lte_type': 'LTE1',
+            'avg_lqi': 'Excellent',
+            'packet_loss': '0.00%',
+            'latency': '36.02',
+            'jitter': '47.82',
+            'lqai': 0,
+            'prl': 0,
+            'lat': 1,
+            'jitr': 1,
+            's': 0,
+            'action': 'No Switch',
+        },
+        {
+            'lte_type': 'LTE2',
+            'avg_lqi': 'Excellent',
+            'packet_loss': '0.00%',
+            'latency': '36.34',
+            'jitter': '47.62',
+            'lqai': 0,
+            'prl': 0,
+            'lat': 1,
+            'jitr': 1,
+            's': 0,
+            'action': 'No Switch',
+        },
+    ]
+
+    # --- Final Switching Decision ---
+    final_decision = 'No Switch Needed'
+
+    # --- Current Network Status ---
+    lte1_status = {
+        'last_test': rf_params[0]['timestamp'] if rf_params else '',
+        'loss': '1.00%',
+        'latency': '34.18',
+        'jitter': '48.27',
     }
-    return render(request, "network/monitor_analysis.html", context)
+    lte2_status = {
+        'last_test': rf_params[1]['timestamp'] if len(rf_params) > 1 else '',
+        'loss': '1.00%',
+        'latency': '34.18',
+        'jitter': '48.27',
+    }
+
+    context = {
+        'rf_params': rf_params,
+        'pred_params': pred_params,
+        'rec_actions': rec_actions,
+        'final_decision': final_decision,
+        'lte1_status': lte1_status,
+        'lte2_status': lte2_status,
+    }
+    return render(request, 'network/monitor_analysis.html', context)
 
 @csrf_exempt
 @require_http_methods(['GET', 'POST'])

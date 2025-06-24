@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>IPsec Configuration</title>
+    <link rel="stylesheet" href="/static/css/common.css">
+    <link rel="stylesheet" href="/static/css/ipsec.css">
+
+    <style>
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        table,
+        th,
+        td {
+            border: 1px solid rgb(182, 165, 165);
+        }
+
+        th,
+        td {
+            padding: 10px;
+            text-align: left;
+        }
+
+        form {
+            display: inline;
+        }
+
+        .form-container {
+            margin-top: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: inline-block;
+            width: 150px;
+            vertical-align: middle;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 500px;
+            display: inline-block;
+            padding: 8px;
+            vertical-align: middle;
+            margin-left: 10px;
+        }
+
+        .form-group button {
+            display: block;
+            margin-top: 10px;
+            padding: 8px 16px;
+            margin-left: 164px;
+        }
+
+        .form-group input[type="checkbox"] {
+            width: auto;
+            margin-left: 10px;
+            vertical-align: middle;
+        }
+
+        .headline {
+            background-color: #333;
+            color: #fff;
+            padding: 10px;
+        }
+    </style>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+</head>
+
+<body>
+    <h1>IPsec Configuration</h1>
+
+    <p>Current IPsec Service Status:
+        {% if service_status == 'active' %}
+        {{ active_status_line }}
+        {% elif service_status == 'inactive' %}
+        {{ inactive_status_line }}
+        {% else %}
+        Failed to retrieve status
+        {% endif %}
+    </p>
+
+    <form method="post">
+        {% csrf_token %}
+        {% if service_status == 'active' %}
+        <button type="submit" name="action" value="disable_service">Disable IPsec</button>
+        {% else %}
+        <button type="submit" name="action" value="enable_service">Enable IPsec</button>
+        {% endif %}
+    </form>
+
+    <h2>IPsec Connections</h2>
+    {% if connections %}
+    <table>
+        <tr>
+            <th>Name</th>
+            <th>Local Address</th>
+            <th>Remote Address</th>
+            <th>Actions</th>
+        </tr>
+        {% for connection in connections %}
+        <tr>
+            <td>{{ connection.name }}</td>
+            <td>{{ connection.local_address }}</td>
+            <td>{{ connection.remote_address }}</td>
+        <td>
+    <div class="action-buttons">
+        <button type="button"
+            onclick="showEditForm('{{ connection.name }}', '{{ connection.local_address }}', '{{ connection.remote_address }}', '{{ connection.ike_version }}', '{{ connection.authentication_method }}', '{{ connection.psk }}', '{{ connection.start_action }}', '{{ connection.my_identifier }}', '{{ connection.my_identifier_input }}', '{{ connection.peer_identifier }}', '{{ connection.peer_identifier_input }}', '{{ connection.encryption_algorithm }}', '{{ connection.key_length }}', '{{ connection.hash }}', '{{ connection.dh_group }}', '{{ connection.local_traffic_selector }}', '{{ connection.remote_traffic_selector }}')">Edit</button>
+
+        <form method="post" action="" style="display:inline;">
+            {% csrf_token %}
+            <input type="hidden" name="connection_name" value="{{ connection.name }}">
+            <button type="submit" name="action" value="delete_connection">Delete</button>
+        </form>
+
+        <form method="post" action="" style="display:inline;">
+            {% csrf_token %}
+            <input type="hidden" name="connection_name" value="{{ connection.name }}">
+            <button type="submit" name="action" value="toggle_connection">{{ connection.status }}</button>
+        </form>
+    </div>
+</td>
+
+            
+        </tr>
+        {% endfor %}
+    </table>
+    {% else %}
+    <p>No IPsec connections available.</p>
+    {% endif %}
+
+    <div class="form-container">
+        <h2>Configure IPsec Connection</h2>
+        <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            <input type="hidden" name="original_name" id="original_name">
+            <div class="form-group">
+                <label for="name">Name:</label>
+                <input type="text" id="name" name="name" required>
+            </div>
+            <div class="form-group">
+                <label for="ike_version">IKE Version:</label>
+                <select id="ike_version" name="ike_version" required>
+                    <option value="ikev1">IKEv1</option>
+                    <option value="ikev2">IKEv2</option>
+                    <option value="ikev1,ikev2">Both</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="local_address">Local Address:</label>
+                <input type="text" id="local_address" name="local_address" required>
+            </div>
+            <div class="form-group">
+                <label for="remote_address">Remote Address:</label>
+                <input type="text" id="remote_address" name="remote_address" required>
+            </div>
+            <div class="form-group">
+                <label for="authentication_method">Authentication Method:</label>
+                <select id="authentication_method" name="authentication_method" required>
+                    <option value="Mutual PSK">Mutual PSK</option>
+                    <option value="Mutual Certificate">Mutual Certificate</option>
+                </select>
+            </div>
+
+            <!-- PSK Field -->
+            <div class="form-group" id="psk_field">
+                <label for="psk">Pre-Shared Key:</label>
+                <input type="text" id="psk" name="psk">
+                <button type="button" id="generate-psk-btn">Generate new Pre-Shared Key</button>
+            </div>
+
+            <!-- Certificate Fields (Hidden by Default) -->
+            <div class="form-group hidden" id="certificate_field">
+                <label for="my_certificate">My Certificate:</label>
+                <input type="file" id="my_certificate" name="my_certificate">
+            </div>
+
+            <div class="form-group hidden" id="ca_certificate_field">
+                <label for="myca_certificate">CA Certificate:</label>
+                <input type="file" id="myca_certificate" name="myca_certificate">
+            </div>
+
+            <div class="form-group">
+                <label for="start_action">Start Action:</label>
+                <select id="start_action" name="start_action">
+                    <option value="none">None</option>
+                    <option value="start">Start</option>
+                    <option value="trap">Trap</option>
+                </select>
+            </div>
+
+            <h3>Local Connection</h3>
+            <div class="form-group">
+                <label for="my_identifier">Identity:</label>
+                <select id="my_identifier" name="my_identifier" required>
+                    <option value="My IP address">My IP address</option>
+                    <option value="Domain name part">Domain name part</option>
+                </select>
+                <input type="text" id="my_identifier_input" name="my_identifier_input" style="display:none;">
+            </div>
+
+            <h3>Remote Connection</h3>
+            <div class="form-group">
+                <label for="peer_identifier">Peer Identity:</label>
+                <select id="peer_identifier" name="peer_identifier" required>
+                    <option value="Peer IP address">Peer IP address</option>
+                    <option value="Fully qualified domain name">Fully qualified domain name</option>
+                </select>
+                <input type="text" id="peer_identifier_input" name="peer_identifier_input" style="display:none;">
+            </div>
+
+            <h3 class="headline">Encryption Algorithm Options</h3>
+            <div class="form-group">
+                <label for="encryption_algorithm">Encryption Algorithm:</label>
+                <select id="encryption_algorithm" name="encryption_algorithm" required>
+                    <!-- Options will be dynamically populated -->
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="key_length">Key Length:</label>
+                <select id="key_length" name="key_length" required>
+                    <!-- Options will be dynamically populated -->
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="hash">Hash:</label>
+                <select id="hash" name="hash" required>
+                    <!-- Options will be dynamically populated -->
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="dh_group">DH Group:</label>
+                <select id="dh_group" name="dh_group" required>
+                    <!-- Options will be dynamically populated -->
+                </select>
+            </div>
+
+            <h3 class="headline">Traffic Sector</h3>
+            <div class="form-group">
+                <label for="local_traffic_selector">Local Traffic Selector:</label>
+                <input type="text" id="local_traffic_selector" name="local_traffic_selector" required>
+            </div>
+
+            <div class="form-group">
+                <label for="remote_traffic_selector">Remote Traffic Selector:</label>
+                <input type="text" id="remote_traffic_selector" name="remote_traffic_selector" required>
+            </div>
+
+            <div class="form-group">
+                <button type="submit" id="save_changes_btn" style="display:none;" name="action" value="edit_connection">Save Changes</button>
+                <button type="submit" id="add_connection_btn" name="action" value="add_connection">Add Connection</button>
+            </div>
+        </form>
+    </div>
+
+    <script>
+        $(document).ready(function () {
+            function toggleAuthOptions() {
+                var selectedMethod = $('#authentication_method').val();
+                if (selectedMethod === 'Mutual PSK') {
+                    $('#psk_field').show();
+                    $('#certificate_field').hide();
+                    $('#ca_certificate_field').hide();
+                } else if (selectedMethod === 'Mutual Certificate') {
+                    $('#psk_field').hide();
+                    $('#certificate_field').show();
+                    $('#ca_certificate_field').show();
+                }
+            }
+
+            // Set initial visibility based on the default selected value
+            toggleAuthOptions();
+
+            // Add event listener to toggle visibility on change
+            $('#authentication_method').change(function () {
+                toggleAuthOptions();
+            });
+
+            $('#my_identifier').change(function () {
+                var selectedIdentifier = $(this).val();
+                if (selectedIdentifier === 'My IP address') {
+                    $('#my_identifier_input').hide();
+                } else {
+                    $('#my_identifier_input').show();
+                }
+            });
+
+            $('#peer_identifier').change(function () {
+                var selectedIdentifier = $(this).val();
+                if (selectedIdentifier === 'Peer IP address') {
+                    $('#peer_identifier_input').hide();
+                } else {
+                    $('#peer_identifier_input').show();
+                }
+            });
+
+            $("#generate-psk-btn").on("click", function () {
+                var newPsk = generatePsk();
+                $("#psk").val(newPsk);
+            });
+
+            function generatePsk() {
+                var pskLength = 56;
+                var psk = "";
+                var characters = "abcdef0123456789";
+                for (var i = 0; i < pskLength; i++) {
+                    var randomIndex = Math.floor(Math.random() * characters.length);
+                    psk += characters[randomIndex];
+                }
+                return psk;
+            }
+
+            function populateDropdowns() {
+                $.ajax({
+                    url: '{% url "get_ipsec_options" %}',
+                    method: 'GET',
+                    success: function (data) {
+                        var encryptionAlgorithms = data.encryption_algorithms;
+                        var keyLengths = data.key_lengths;
+                        var hashOptions = data.hash_options;
+                        var dhGroups = data.dh_groups;
+
+                        // Populate encryption algorithms
+                        var encryptionAlgorithmDropdown = $('#encryption_algorithm');
+                        encryptionAlgorithmDropdown.empty();
+                        $.each(encryptionAlgorithms, function (index, value) {
+                            encryptionAlgorithmDropdown.append($('<option>', { value: value, text: value }));
+                        });
+
+                        // Populate key lengths based on the selected encryption algorithm
+                        $('#encryption_algorithm').change(function () {
+                            var selectedAlgorithm = $(this).val();
+                            var keyLengthDropdown = $('#key_length');
+                            keyLengthDropdown.empty();
+                            $.each(keyLengths[selectedAlgorithm], function (index, value) {
+                                keyLengthDropdown.append($('<option>', { value: value, text: value }));
+                            });
+                        }).trigger('change'); // Trigger change event to populate key lengths on page load
+
+                        // Populate hash options
+                        var hashDropdown = $('#hash');
+                        hashDropdown.empty();
+                        $.each(hashOptions, function (index, value) {
+                            hashDropdown.append($('<option>', { value: value, text: value }));
+                        });
+
+                        // Populate DH groups
+                        var dhGroupDropdown = $('#dh_group');
+                        dhGroupDropdown.empty();
+                        $.each(dhGroups, function (index, value) {
+                            dhGroupDropdown.append($('<option>', { value: value, text: value }));
+                        });
+                    },
+                    error: function (error) {
+                        console.log('Error fetching IPsec options:', error);
+                    }
+                });
+            }
+
+            populateDropdowns();
+        });
+
+        function showEditForm(name, localAddress, remoteAddress, ikeVersion, authMethod, psk, startAction, myId, myIdInput, peerId, peerIdInput, encryptionAlgorithm, keyLength, hash, dhGroup, localTrafficSelector, remoteTrafficSelector) {
+            $('#original_name').val(name);
+            $('#name').val(name);
+            $('#local_address').val(localAddress);
+            $('#remote_address').val(remoteAddress);
+            $('#ike_version').val(ikeVersion);
+            $('#authentication_method').val(authMethod).trigger('change');
+            $('#psk').val(psk);
+            $('#start_action').val(startAction);
+            $('#my_identifier').val(myId).trigger('change');
+            $('#my_identifier_input').val(myIdInput);
+            $('#peer_identifier').val(peerId).trigger('change');
+            $('#peer_identifier_input').val(peerIdInput);
+            $('#encryption_algorithm').val(encryptionAlgorithm);
+            $('#key_length').val(keyLength);
+            $('#hash').val(hash);
+            $('#dh_group').val(dhGroup);
+            $('#local_traffic_selector').val(localTrafficSelector);
+            $('#remote_traffic_selector').val(remoteTrafficSelector);
+
+            $('#add_connection_btn').hide();
+            $('#save_changes_btn').show();
+            $('html, body').animate({
+                scrollTop: $(".form-container").offset().top
+            }, 500);
+        }
+    </script>
+
+</body>
+
+</html>

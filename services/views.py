@@ -18,66 +18,144 @@ import netifaces
 import ipaddress
 import re
 from datetime import datetime, timedelta
+import secrets
 
 # IPSec Views
+def read_swanctl_conf():
+    with open('/etc/swanctl/swanctl.conf', 'r') as file:
+        return file.read()
+
+def write_swanctl_conf(content):
+    with open('/etc/swanctl/swanctl.conf', 'w') as file:
+        file.write(content)
+
+def parse_swanctl_conf():
+    conf = read_swanctl_conf()
+    connections = []
+    connection = {}
+    in_connection = False
+    connection_name = ""
+    
+    for line in conf.splitlines():
+        line = line.strip()
+        
+        if line.startswith('connections'):
+            continue
+        
+        elif line.endswith('{') and not in_connection:
+            in_connection = True
+            connection_name = line.split()[0]
+            connection = {'name': connection_name, 'local_address': '', 'remote_address': '', 'status': 'inactive'}
+        
+        elif line == '}' and in_connection:
+            in_connection = False
+            connections.append(connection)
+            connection = {}
+        
+        elif '=' in line and in_connection:
+            key, value = line.split('=', 1)
+            key = key.strip()
+            value = value.strip()
+            if key == 'local_addrs':
+                connection['local_address'] = value
+            elif key == 'remote_addrs':
+                connection['remote_address'] = value
+    
+    return connections
+
+def format_proposals(encryption_algorithm, key_length, hash_algo, dh_group):
+    return f'{encryption_algorithm.lower()}-{hash_algo.lower()}-{dh_group.lower()}'
+
+class TunnelForm(forms.Form):
+    name = forms.CharField(max_length=50)
+    local = forms.GenericIPAddressField(label='Local Address')
+    remote = forms.GenericIPAddressField(label='Remote Address')
+    ike_version = forms.ChoiceField(
+        choices=[('ikev1', 'IKEv1'), ('ikev2', 'IKEv2'), ('ikev1,ikev2', 'Both')],
+        initial='ikev2'
+    )
+    authentication_method = forms.ChoiceField(
+        choices=[('Mutual PSK', 'Mutual PSK'), ('Mutual Certificate', 'Mutual Certificate')],
+        initial='Mutual PSK'
+    )
+    preshared = forms.CharField(widget=forms.PasswordInput(), label='Pre-shared Key')
+    encryption_algorithm = forms.ChoiceField(
+        choices=[
+            ('aes256', 'AES-256'),
+            ('aes128', 'AES-128'),
+            ('3des', '3DES')
+        ]
+    )
+    key_length = forms.ChoiceField(
+        choices=[
+            ('128', '128 bits'),
+            ('192', '192 bits'),
+            ('256', '256 bits')
+        ]
+    )
+    hash_algo = forms.ChoiceField(
+        choices=[
+            ('sha1', 'SHA1'),
+            ('sha256', 'SHA256'),
+            ('sha384', 'SHA384'),
+            ('sha512', 'SHA512'),
+            ('md5', 'MD5')
+        ],
+        label='Hash Algorithm'
+    )
+    dh_group = forms.ChoiceField(
+        choices=[
+            ('modp1024', 'Group 2 (1024 bit)'),
+            ('modp1536', 'Group 5 (1536 bit)'),
+            ('modp2048', 'Group 14 (2048 bit)'),
+            ('modp3072', 'Group 15 (3072 bit)'),
+            ('modp4096', 'Group 16 (4096 bit)')
+        ],
+        label='DH Group'
+    )
+    local_ts = forms.CharField(
+        label='Local Traffic Selector',
+        initial='0.0.0.0/0',
+        help_text='Format: network/netmask (e.g. 192.168.1.0/24)'
+    )
+    remote_ts = forms.CharField(
+        label='Remote Traffic Selector',
+        initial='0.0.0.0/0',
+        help_text='Format: network/netmask (e.g. 192.168.1.0/24)'
+    )
+
 class IPsecView(LoginRequiredMixin, View):
     def get(self, request):
-        # Get IPSec tunnel status
         try:
-            status = subprocess.check_output(['ipsec', 'status']).decode('utf-8')
+            status = subprocess.check_output(['swanctl', '--list-sas']).decode('utf-8')
         except:
             status = "Unable to retrieve IPSec status"
         
-        # Simulate tunnel list
-        tunnels = [
-            {
-                'id': 1,
-                'name': 'tunnel1',
-                'status': 'up',
-                'local': '192.168.1.1',
-                'remote': '203.0.113.5',
-                'preshared': '********',
-                'ike': 'aes256-sha1-modp1024',
-                'esp': 'aes256-sha1'
-            },
-            {
-                'id': 2,
-                'name': 'tunnel2',
-                'status': 'down',
-                'local': '192.168.1.2',
-                'remote': '198.51.100.10',
-                'preshared': '********',
-                'ike': 'aes128-sha1-modp1024',
-                'esp': 'aes128-sha1'
-            }
-        ]
+        try:
+            service_status = subprocess.check_output(['systemctl', 'is-active', 'strongswan']).decode().strip()
+        except:
+            service_status = 'inactive'
+
+        connections = parse_swanctl_conf()
         
         # Get IPSec logs
         try:
-            logs = subprocess.check_output(['journalctl', '-u', 'ipsec', '--no-pager', '-n', '20']).decode('utf-8')
+            logs = []
+            with open('/var/log/ipsec.log', 'r') as f:
+                for line in f.readlines()[-20:]:  # Last 20 lines
+                    parts = line.split(' ', 2)
+                    if len(parts) >= 2:
+                        logs.append({
+                            'timestamp': f"{parts[0]} {parts[1]}",
+                            'message': parts[2] if len(parts) > 2 else ''
+                        })
         except:
-            logs = "Unable to retrieve IPSec logs"
-        
-        # Form for tunnel configuration
-        class TunnelForm(forms.Form):
-            name = forms.CharField(max_length=50)
-            local = forms.GenericIPAddressField()
-            remote = forms.GenericIPAddressField()
-            preshared = forms.CharField(widget=forms.PasswordInput())
-            ike = forms.ChoiceField(choices=[
-                ('aes256-sha1-modp1024', 'aes256-sha1-modp1024'),
-                ('aes128-sha1-modp1024', 'aes128-sha1-modp1024'),
-                ('aes256-sha256-modp2048', 'aes256-sha256-modp2048')
-            ])
-            esp = forms.ChoiceField(choices=[
-                ('aes256-sha1', 'aes256-sha1'),
-                ('aes128-sha1', 'aes128-sha1'),
-                ('aes256-sha256', 'aes256-sha256')
-            ])
+            logs = []
         
         return render(request, 'services/ipsec.html', {
             'status': status,
-            'tunnels': tunnels,
+            'service_status': service_status,
+            'tunnels': connections,
             'logs': logs,
             'tunnel_form': TunnelForm()
         })
@@ -88,7 +166,7 @@ class IPsecView(LoginRequiredMixin, View):
         if action == 'start_tunnel':
             tunnel_id = request.POST.get('tunnel_id')
             try:
-                subprocess.run(['ipsec', 'up', f'tunnel{tunnel_id}'], check=True)
+                subprocess.run(['swanctl', '--initiate', f'--child={tunnel_id}'], check=True)
                 return JsonResponse({'success': True})
             except subprocess.CalledProcessError as e:
                 return JsonResponse({'success': False, 'error': str(e)})
@@ -96,19 +174,109 @@ class IPsecView(LoginRequiredMixin, View):
         elif action == 'stop_tunnel':
             tunnel_id = request.POST.get('tunnel_id')
             try:
-                subprocess.run(['ipsec', 'down', f'tunnel{tunnel_id}'], check=True)
+                subprocess.run(['swanctl', '--terminate', f'--child={tunnel_id}'], check=True)
                 return JsonResponse({'success': True})
             except subprocess.CalledProcessError as e:
                 return JsonResponse({'success': False, 'error': str(e)})
         
         elif action == 'restart_ipsec':
             try:
-                subprocess.run(['systemctl', 'restart', 'ipsec'], check=True)
+                subprocess.run(['systemctl', 'restart', 'strongswan'], check=True)
                 return JsonResponse({'success': True})
             except subprocess.CalledProcessError as e:
                 return JsonResponse({'success': False, 'error': str(e)})
         
-        return JsonResponse({'success': False, 'error': 'Invalid action'})
+        elif action == 'reload_ipsec':
+            try:
+                subprocess.run(['swanctl', '--load-all'], check=True)
+                return JsonResponse({'success': True})
+            except subprocess.CalledProcessError as e:
+                return JsonResponse({'success': False, 'error': str(e)})
+        
+        elif action == 'stop_ipsec':
+            try:
+                subprocess.run(['systemctl', 'stop', 'strongswan'], check=True)
+                return JsonResponse({'success': True})
+            except subprocess.CalledProcessError as e:
+                return JsonResponse({'success': False, 'error': str(e)})
+
+        form = TunnelForm(request.POST)
+        if form.is_valid():
+            name = form.cleaned_data['name']
+            local_address = form.cleaned_data['local']
+            remote_address = form.cleaned_data['remote']
+            encryption_algorithm = form.cleaned_data['encryption_algorithm']
+            key_length = form.cleaned_data['key_length']
+            hash_algo = form.cleaned_data['hash_algo']
+            dh_group = form.cleaned_data['dh_group']
+            ike_version = form.cleaned_data['ike_version']
+            authentication_method = form.cleaned_data['authentication_method']
+            psk = form.cleaned_data['preshared']
+            local_ts = form.cleaned_data['local_ts']
+            remote_ts = form.cleaned_data['remote_ts']
+
+            version = '1' if ike_version == 'ikev1' else '2'
+            proposals = format_proposals(encryption_algorithm, key_length, hash_algo, dh_group)
+
+            conf = read_swanctl_conf()
+            new_conf_lines = []
+            in_connection = False
+            for line in conf.splitlines():
+                if line.strip().startswith(f'{name} {{'):
+                    in_connection = True
+                if not in_connection:
+                    new_conf_lines.append(line)
+                if in_connection and line.strip() == '}':
+                    in_connection = False
+
+            new_connection = f"""
+{name} {{
+    version = {version}
+    local_addrs = {local_address}
+    remote_addrs = {remote_address}
+    local_port = 4500
+    remote_port = 4500
+    proposals = {proposals}
+    keyingtries = 0
+    dpd_delay = 30s
+    local {{
+        auth = psk
+        id = {local_address}
+    }}
+    remote {{
+        auth = psk
+        id = {remote_address}
+    }}
+    children {{
+        vpn {{
+            mode = tunnel
+            local_ts = {local_ts}
+            remote_ts = {remote_ts}
+            dpd_action = start
+            start_action = start
+            esp_proposals = {proposals}
+        }}
+    }}
+}}
+secrets {{
+    ike-1 {{
+        id-1 = {local_address}
+        id-2 = {remote_address}
+        secret = {psk}
+    }}
+}}"""
+            new_conf_lines.append(new_connection.strip())
+            write_swanctl_conf('\n'.join(new_conf_lines).strip())
+
+            subprocess.run(['swanctl', '--load-all'])
+            messages.success(request, 'Tunnel configuration saved successfully.')
+            return redirect('services:ipsec')
+
+        return JsonResponse({'success': False, 'error': 'Invalid form data'})
+
+def generate_psk(request):
+    psk = secrets.token_hex(16)
+    return JsonResponse({'psk': psk})
 
 # VPN Views
 class VPNView(LoginRequiredMixin, View):

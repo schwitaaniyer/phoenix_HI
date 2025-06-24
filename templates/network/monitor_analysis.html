@@ -1,89 +1,132 @@
-{# Adapted from new/network_monitoring/templates/network_monitoring/lte.html and dashboard.html #}
+{# LTE Switching Analysis - Analysis Tab #}
 
 <div class="container-fluid">
     <div class="row">
         <div class="col-12">
             <div class="card mb-4">
                 <div class="card-header">
-                    <h4>RF Parameters (Real-Time)</h4>
+                    <h5 class="mb-0">RF Parameters (Real-Time)</h5>
                 </div>
-                <div class="card-body">
+                <div class="card-body p-0">
                     <div class="table-responsive">
-                        <table class="table table-striped">
+                        <table class="table table-striped mb-0">
                             <thead>
                                 <tr>
-                                    <th>Timestamp</th>
-                                    <th>LTE Type</th>
+                                    <th>TIMESTAMP</th>
+                                    <th>LTE TYPE</th>
                                     <th>RSRP</th>
-                                    <th>RSRP Index</th>
+                                    <th>RSRP INDEX</th>
                                     <th>RSRQ</th>
-                                    <th>RSRQ Index</th>
+                                    <th>RSRQ INDEX</th>
                                     <th>SINR</th>
                                     <th>LQI</th>
-                                    <th>Link Condition</th>
+                                    <th>LINK CONDITION</th>
                                 </tr>
                             </thead>
-                            <tbody>
-                                {# Example row, replace with actual data #}
+                            <tbody id="rf-table-body">
+                                {% for row in rf_params|slice:":10" %}
                                 <tr>
-                                    <td>{{ lte1_actual.timestamp }}</td>
-                                    <td>LTE1</td>
-                                    <td>{{ lte1_actual.rsrp }}</td>
-                                    <td>{{ lte1_actual.rsrp_index }}</td>
-                                    <td>{{ lte1_actual.rsrq }}</td>
-                                    <td>{{ lte1_actual.rsrq_index }}</td>
-                                    <td>{{ lte1_actual.sinr }}</td>
-                                    <td>{{ lte1_actual.lqi }}</td>
-                                    <td>{{ lte1_actual.link_condition }}</td>
+                                    <td>{{ row.timestamp }}</td>
+                                    <td>{{ row.lte_type }}</td>
+                                    <td>{{ row.rsrp }}</td>
+                                    <td>{{ row.rsrp_index }}</td>
+                                    <td>{{ row.rsrq }}</td>
+                                    <td>{{ row.rsrq_index }}</td>
+                                    <td>{{ row.sinr }}</td>
+                                    <td>{{ row.lqi }}</td>
+                                    <td>{{ row.link_condition }}</td>
                                 </tr>
-                                <tr>
-                                    <td>{{ lte2_actual.timestamp }}</td>
-                                    <td>LTE2</td>
-                                    <td>{{ lte2_actual.rsrp }}</td>
-                                    <td>{{ lte2_actual.rsrp_index }}</td>
-                                    <td>{{ lte2_actual.rsrq }}</td>
-                                    <td>{{ lte2_actual.rsrq_index }}</td>
-                                    <td>{{ lte2_actual.sinr }}</td>
-                                    <td>{{ lte2_actual.lqi }}</td>
-                                    <td>{{ lte2_actual.link_condition }}</td>
-                                </tr>
+                                {% endfor %}
                             </tbody>
                         </table>
+                    </div>
+                    <div class="p-3">
+                        <button class="btn btn-primary btn-sm" id="toggleRfTable">View All</button>
                     </div>
                 </div>
             </div>
 
             <div class="card mb-4">
                 <div class="card-header">
-                    <h4>Predicted LTE Parameters</h4>
+                    <h5 class="mb-0">Predicted LTE Parameters</h5>
                 </div>
-                <div class="card-body">
+                <div class="card-body p-0">
                     <div class="table-responsive">
-                        <table class="table table-striped">
+                        <table class="table table-striped mb-0">
                             <thead>
                                 <tr>
-                                    <th>Timestamp</th>
-                                    <th>LTE Type</th>
-                                    <th>Predicted RSRP</th>
-                                    <th>Predicted RSRQ</th>
-                                    <th>Predicted SINR</th>
+                                    <th>TIMESTAMP</th>
+                                    <th>LTE TYPE</th>
+                                    <th>RSRP</th>
+                                    <th>RSRP INDEX</th>
+                                    <th>RSRQ</th>
+                                    <th>RSRQ INDEX</th>
+                                    <th>SINR</th>
+                                    <th>LQI</th>
+                                    <th>LINK CONDITION</th>
+                                </tr>
+                            </thead>
+                            <tbody id="pred-table-body">
+                                {% for row in pred_params|slice:":10" %}
+                                <tr>
+                                    <td>{{ row.timestamp }}</td>
+                                    <td>{{ row.lte_type }}</td>
+                                    <td>{{ row.rsrp }}</td>
+                                    <td>{{ row.rsrp_index }}</td>
+                                    <td>{{ row.rsrq }}</td>
+                                    <td>{{ row.rsrq_index }}</td>
+                                    <td>{{ row.sinr }}</td>
+                                    <td>{{ row.lqi }}</td>
+                                    <td>{{ row.link_condition }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="p-3">
+                        <button class="btn btn-primary btn-sm" id="togglePredTable">View All</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Recommended Action</h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-striped mb-0">
+                            <thead>
+                                <tr>
+                                    <th>LTE TYPE</th>
+                                    <th>AVG LQI</th>
+                                    <th>PACKET LOSS (%)</th>
+                                    <th>LATENCY (MS)</th>
+                                    <th>JITTER (MS)</th>
+                                    <th>LQAI</th>
+                                    <th>PRL</th>
+                                    <th>LAT</th>
+                                    <th>JITR</th>
+                                    <th>S</th>
+                                    <th>RECOMMENDED ACTION</th>
                                 </tr>
                             </thead>
                             <tbody>
+                                {% for row in rec_actions %}
                                 <tr>
-                                    <td>{{ lte1_pred.timestamp }}</td>
-                                    <td>LTE1</td>
-                                    <td>{{ lte1_pred.predicted_rsrp }}</td>
-                                    <td>{{ lte1_pred.predicted_rsrq }}</td>
-                                    <td>{{ lte1_pred.predicted_sinr }}</td>
+                                    <td>{{ row.lte_type }}</td>
+                                    <td>{{ row.avg_lqi }}</td>
+                                    <td>{{ row.packet_loss }}</td>
+                                    <td>{{ row.latency }}</td>
+                                    <td>{{ row.jitter }}</td>
+                                    <td>{{ row.lqai }}</td>
+                                    <td>{{ row.prl }}</td>
+                                    <td>{{ row.lat }}</td>
+                                    <td>{{ row.jitr }}</td>
+                                    <td>{{ row.s }}</td>
+                                    <td>{{ row.action }}</td>
                                 </tr>
-                                <tr>
-                                    <td>{{ lte2_pred.timestamp }}</td>
-                                    <td>LTE2</td>
-                                    <td>{{ lte2_pred.predicted_rsrp }}</td>
-                                    <td>{{ lte2_pred.predicted_rsrq }}</td>
-                                    <td>{{ lte2_pred.predicted_sinr }}</td>
-                                </tr>
+                                {% endfor %}
                             </tbody>
                         </table>
                     </div>
@@ -92,14 +135,79 @@
 
             <div class="card mb-4">
                 <div class="card-header">
-                    <h4>Recommended Action</h4>
+                    <h5 class="mb-0">Final Switching Decision</h5>
                 </div>
                 <div class="card-body">
-                    <div class="alert alert-info">
-                        {{ recommended_action }}
+                    <div class="alert alert-info mb-0">{{ final_decision }}</div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h6 class="mb-0">LTE1 Network Status</h6>
+                        </div>
+                        <div class="card-body">
+                            <div>Last Test: <span class="text-success">{{ lte1_status.last_test }}</span></div>
+                            <div>Current Loss: <span class="text-success">{{ lte1_status.loss }}</span></div>
+                            <div>Latency: <span class="text-info">{{ lte1_status.latency }}</span> ms</div>
+                            <div>Jitter: <span class="text-info">{{ lte1_status.jitter }}</span> ms</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h6 class="mb-0">LTE2 Network Status</h6>
+                        </div>
+                        <div class="card-body">
+                            <div>Last Test: <span class="text-success">{{ lte2_status.last_test }}</span></div>
+                            <div>Current Loss: <span class="text-success">{{ lte2_status.loss }}</span></div>
+                            <div>Latency: <span class="text-info">{{ lte2_status.latency }}</span> ms</div>
+                            <div>Jitter: <span class="text-info">{{ lte2_status.jitter }}</span> ms</div>
+                        </div>
                     </div>
                 </div>
             </div>
+
         </div>
     </div>
-</div> 
+</div>
+
+<script>
+// Collapsible tables for RF and Predicted Parameters
+const rfTableBody = document.getElementById('rf-table-body');
+const predTableBody = document.getElementById('pred-table-body');
+const rfRows = Array.from(rfTableBody.children);
+const predRows = Array.from(predTableBody.children);
+let rfCollapsed = true;
+let predCollapsed = true;
+
+document.getElementById('toggleRfTable').onclick = function() {
+    if (rfCollapsed) {
+        // Show all
+        rfRows.forEach(row => row.style.display = '');
+        this.textContent = 'Collapse';
+    } else {
+        // Show only first 10
+        rfRows.forEach((row, i) => row.style.display = i < 10 ? '' : 'none');
+        this.textContent = 'View All';
+    }
+    rfCollapsed = !rfCollapsed;
+};
+
+document.getElementById('togglePredTable').onclick = function() {
+    if (predCollapsed) {
+        predRows.forEach(row => row.style.display = '');
+        this.textContent = 'Collapse';
+    } else {
+        predRows.forEach((row, i) => row.style.display = i < 10 ? '' : 'none');
+        this.textContent = 'View All';
+    }
+    predCollapsed = !predCollapsed;
+};
+// Initially collapse to first 10
+rfRows.forEach((row, i) => row.style.display = i < 10 ? '' : 'none');
+predRows.forEach((row, i) => row.style.display = i < 10 ? '' : 'none');
+</script> 
