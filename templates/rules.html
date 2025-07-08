@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/static/css/plugins.css">
+    <title>Home</title>
+</head>
+
+<body>
+    <div class="main">
+        <nav>
+            <div>
+                <div class="menu-icon">
+                    <div class="line-1"></div>
+                    <div class="line-2"></div>
+                    <div class="line-3"></div>
+                </div>
+                <div class="hughes-title">
+                    <h3>Rules</h3>
+                </div>
+            </div>
+            <div class="nav-child2">
+                <div class="nav-home-logo"><svg viewBox="0 0 24 24" fill="none"
+                        xmlns="http://www.w3.org/2000/svg">
+                        <g id="SVGRepo_bgCarrier" stroke-width="0"></g>
+                        <g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g>
+                        <g id="SVGRepo_iconCarrier">
+                            <path fill-rule="evenodd" clip-rule="evenodd"
+                                d="M21.4498 10.275L11.9998 3.1875L2.5498 10.275L2.9998 11.625H3.7498V20.25H20.2498V11.625H20.9998L21.4498 10.275ZM5.2498 18.75V10.125L11.9998 5.0625L18.7498 10.125V18.75H14.9999V14.3333L14.2499 13.5833H9.74988L8.99988 14.3333V18.75H5.2498ZM10.4999 18.75H13.4999V15.0833H10.4999V18.75Z"
+                                fill="#ffffff"></path>
+                        </g>
+                    </svg></div>
+                <button class="logout_btn">Logout</button>
+                <div class="theme_button">
+                    <div class="theme_button_child"></div>
+                </div>
+            </div>
+        </nav>
+
+        <div class="content">
+            <div class="table">
+                <form method="post">
+                    {% csrf_token %}
+                    <label for="actionDropdown">Select Action*:</label>
+                    <select id="actionDropdown" name="selectedAction" class="form-control">
+                        {% for option in static_action_options %}
+                        <option value="{{ option }}">{{ option }}</option>
+                        {% endfor %}
+                    </select>
+
+                    <label for="serviceDropdown">Select Service*:</label>
+                    <select id="serviceDropdown" name="selectedService" class="form-control">
+                        {% for option in static_service_options %}
+                        <option value="{{ option }}">{{ option }}</option>
+                        {% endfor %}
+                    </select>
+
+                    <label for="sourceDropdown">Select Source*:</label>
+                    <select id="sourceDropdown" name="selectedSource" class="form-control">
+                        {% for option in static_source_options %}
+                        <option value="{{ option }}">{{ option }}</option>
+                        {% endfor %}
+                    </select>
+
+                    <label for="destinationDropdown">Select Destination*:</label>
+                    <select id="destinationDropdown" name="selectedDestination" class="form-control">
+                        {% for option in static_destination_options %}
+                        <option value="{{ option }}">{{ option }}</option>
+                        {% endfor %}
+                    </select>
+
+                    <div class="form-group">
+                        <label for="comment">Comment*:</label>
+                        <input type="text" class="form-control" id="comment" name="comment">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="in_min">Incoming guaranteed rate </label>
+                        <input type="text" class="form-control" id="in_min" name="in_min">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="in_max">Incoming maximum rate </label>
+                        <input type="text" class="form-control" id="in_max" name="in_max">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="out_min">Outgoing guaranteed rate </label>
+                        <input type="text" class="form-control" id="out_min" name="out_min">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="out_max">Outgoing maximum rate</label>
+                        <input type="text" class="form-control" id="out_max" name="out_max">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="prio">Priority </label>
+                        <input type="text" class="form-control" id="prio" name="prio">
+                    </div>
+
+                    <button type="submit">Submit</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Example JavaScript for handling form submission
+        document.getElementById('serviceDropdown').addEventListener('change', function () {
+            var form = this.form;
+            var formData = new FormData(form);
+
+            fetch(form.action, {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    alert(data.message); // Display the server response
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                });
+        });
+    </script>
+</body>
+
+</html>

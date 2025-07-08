@@ -25,14 +25,14 @@
             </div>
         </div>
         
-        <form id="terminalForm" method="post" class="mt-3">
+        <form id="terminalForm" method="post" class="mt-3" autocomplete="off" onsubmit="return false;">
             {% csrf_token %}
             <div class="input-group">
                 <span class="input-group-text">
                     <span class="text-success">user@sdwan:</span>
                     <span class="text-primary">~$</span>
                 </span>
-                <input type="text" name="command" class="form-control terminal-input" autocomplete="off">
+                <input type="text" name="command" class="form-control terminal-input" id="terminalInput" autocomplete="off" autofocus>
                 <button type="submit" class="btn btn-primary">Execute</button>
             </div>
         </form>
@@ -67,53 +67,141 @@
     </div>
 </div>
 
+{% block extra_css %}
+<style>
+.terminal-output {
+    background: #181818;
+    color: #e0e0e0;
+    font-family: 'Fira Mono', 'Consolas', 'Menlo', monospace;
+    padding: 1rem;
+    min-height: 300px;
+    max-height: 400px;
+    overflow-y: auto;
+    border-radius: 8px;
+    margin-bottom: 1rem;
+    border: 1px solid #333;
+}
+.terminal-line {
+    white-space: pre-wrap;
+    font-size: 1rem;
+    line-height: 1.5;
+}
+.terminal-input {
+    background: #222;
+    color: #e0e0e0;
+    font-family: 'Fira Mono', 'Consolas', 'Menlo', monospace;
+    border: 1px solid #333;
+}
+.terminal-line .error {
+    color: #ff5555;
+}
+.terminal-line .success {
+    color: #50fa7b;
+}
+.terminal-line .warning {
+    color: #f1fa8c;
+}
+</style>
+{% endblock %}
+
 {% block extra_js %}
 <script>
-document.getElementById('terminalForm').addEventListener('submit', function(e) {
+const terminalForm = document.getElementById('terminalForm');
+const terminalInput = document.getElementById('terminalInput');
+const terminalOutput = document.getElementById('terminalOutput');
+let commandHistory = [];
+let historyIndex = -1;
+
+terminalForm.addEventListener('submit', function(e) {
     e.preventDefault();
-    const command = this.querySelector('input[name="command"]').value.trim();
-    
-    if (command) {
-        const output = document.getElementById('terminalOutput');
-        
-        // Add the command to output
-        const commandLine = document.createElement('div');
-        commandLine.className = 'terminal-line';
-        commandLine.innerHTML = `
-            <span class="text-success">user@sdwan:</span>
-            <span class="text-primary">~$</span>
-            <span>${command}</span>
-        `;
-        output.appendChild(commandLine);
-        
-        // Scroll to bottom
-        output.scrollTop = output.scrollHeight;
-        
-        // Send command to server
-        fetch(this.action, {
-            method: 'POST',
-            headers: {
-                'X-CSRFToken': this.querySelector('[name=csrfmiddlewaretoken]').value,
-                'Content-Type': 'application/x-www-form-urlencoded',
-            },
-            body: new URLSearchParams(new FormData(this)),
-        })
-        .then(response => response.json())
-        .then(data => {
-            // Add command output
-            const outputLine = document.createElement('div');
-            outputLine.className = 'terminal-line';
-            outputLine.textContent = data.output || 'No output';
-            output.appendChild(outputLine);
-            
-            // Clear input
-            this.querySelector('input[name="command"]').value = '';
-            
-            // Scroll to bottom
-            output.scrollTop = output.scrollHeight;
-        });
+    executeCommand();
+});
+
+terminalInput.addEventListener('keydown', function(e) {
+    if (e.key === 'ArrowUp') {
+        if (commandHistory.length > 0 && historyIndex > 0) {
+            historyIndex--;
+            terminalInput.value = commandHistory[historyIndex];
+        } else if (commandHistory.length > 0 && historyIndex === -1) {
+            historyIndex = commandHistory.length - 1;
+            terminalInput.value = commandHistory[historyIndex];
+        }
+        e.preventDefault();
+    } else if (e.key === 'ArrowDown') {
+        if (commandHistory.length > 0 && historyIndex < commandHistory.length - 1) {
+            historyIndex++;
+            terminalInput.value = commandHistory[historyIndex];
+        } else if (historyIndex >= commandHistory.length - 1) {
+            historyIndex = -1;
+            terminalInput.value = '';
+        }
+        e.preventDefault();
+    } else if (e.key === 'Enter') {
+        executeCommand();
+        e.preventDefault();
     }
 });
+
+function executeCommand() {
+    const command = terminalInput.value.trim();
+    if (!command) return;
+    // Add to history
+    if (commandHistory.length === 0 || commandHistory[commandHistory.length - 1] !== command) {
+        commandHistory.push(command);
+    }
+    historyIndex = -1;
+    // Add the command to output
+    const commandLine = document.createElement('div');
+    commandLine.className = 'terminal-line';
+    commandLine.innerHTML = `
+        <span class="text-success">user@sdwan:</span>
+        <span class="text-primary">~$</span>
+        <span>${escapeHtml(command)}</span>
+    `;
+    terminalOutput.appendChild(commandLine);
+    terminalOutput.scrollTop = terminalOutput.scrollHeight;
+    // Send command to server
+    fetch(terminalForm.action, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': terminalForm.querySelector('[name=csrfmiddlewaretoken]').value,
+            'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: new URLSearchParams(new FormData(terminalForm)),
+    })
+    .then(response => response.json())
+    .then(data => {
+        // Add command output
+        const outputLine = document.createElement('div');
+        outputLine.className = 'terminal-line';
+        // Colorize output if error/warning
+        if (data.output && data.output.toLowerCase().includes('error')) {
+            outputLine.innerHTML = `<span class='error'>${escapeHtml(data.output)}</span>`;
+        } else if (data.output && data.output.toLowerCase().includes('warning')) {
+            outputLine.innerHTML = `<span class='warning'>${escapeHtml(data.output)}</span>`;
+        } else {
+            outputLine.innerHTML = `<span class='success'>${escapeHtml(data.output)}</span>`;
+        }
+        terminalOutput.appendChild(outputLine);
+        terminalInput.value = '';
+        terminalOutput.scrollTop = terminalOutput.scrollHeight;
+    });
+}
+
+function escapeHtml(text) {
+    var map = {
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#039;'
+    };
+    return text.replace(/[&<>"']/g, function(m) { return map[m]; });
+}
+
+// Focus input on page load and when clicking output
+window.onload = () => terminalInput.focus();
+terminalOutput.addEventListener('click', () => terminalInput.focus());
 </script>
 {% endblock %}
 {% endblock %}

@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/static/css/plugins.css">
+    <title>Apply</title>
+</head>
+<body>
+<!-- Apply Changes Form -->
+<form method="post" action="apply">
+    {% csrf_token %}
+    <input type="hidden" name="apply" value="apply">  <!-- Add this line -->
+    <button type="submit">Apply Changes</button>
+</form>
+
+<!-- Reload And Changes Form -->
+<form method="post" action="reload_apply">
+    {% csrf_token %}
+    <input type="hidden" name="reload_apply" value="reload_apply">  <!-- Add this line -->
+    <button type="submit">Reload And Changes</button>
+</form>
+
+</body>
+</html>

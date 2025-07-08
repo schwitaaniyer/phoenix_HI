@@ -1,3 +1,11 @@
+# to be added
+# pip install django-crispy-forms==2.4
+# pip install crispy-bootstrap5
+# pip install psutil
+# pytz
+# netifaces -- use version 2 
+# wheel
+
 django==5.2.3
 django-crispy-forms==2.4
 django-widget-tweaks==1.5.0

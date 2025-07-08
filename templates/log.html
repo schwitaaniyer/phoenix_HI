@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/static/css/viewLog.css">
+    <title>Log View</title>
+</head>
+
+<body>
+    <div class="main">
+        <nav>
+            <div class="menu-icon">
+                <div class="line-1"></div>
+                <div class="line-2"></div>
+                <div class="line-3"></div>
+            </div>
+            <div class="hughes-title"><h3>Log View</h3></div>
+            <button class="logout_btn">Logout</button>
+        </nav>
+        <div class="main-body">
+            <form class="menu-list" method="get" action="{% url 'log' %}">
+                <button type="submit" name="log_type" value="traffic">Traffic Log</button>
+                <button type="submit" name="log_type" value="connection">Connection Log</button>
+                <button type="submit" name="log_type" value="connNew">ConnNew Log</button> 
+                <button type="submit" name="log_type" value="vuurmuur">Firewall Log</button> 
+                <button type="submit" name="log_type" value="audit">Audit Log</button> 
+                <button type="submit" name="log_type" value="error">Error Log</button>
+                <button type="submit" name="log_type" value="debug">Debug Log</button>
+            </form>
+            <div class="content">
+                <p>
+                    {% if log_type %}
+                        <!-- <h2>{{ log_type|title }} Log</h2> -->
+                        <pre>{{ output }}</pre>
+                    {% endif %}
+                </p>
+            </div>
+        </div>
+    </div>
+    <script src="/static/js/viewLog.js"></script>
+</body>
+
+</html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!--<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Log Viewer</title>
+</head>
+<body>
+    <h1>Log Viewer</h1>
+
+    <form method="get" action="{% url 'log' %}">
+        <button type="submit" name="log_type" value="traffic">Traffic Log</button>
+        <button type="submit" name="log_type" value="connection">Connection Log</button>
+        <button type="submit" name="log_type" value="connNew">ConnNew Log</button> 
+        <button type="submit" name="log_type" value="vuurmuur">Vuurmuur Log</button> 
+        <button type="submit" name="log_type" value="audit">Audit Log</button> 
+        <button type="submit" name="log_type" value="error">Error Log</button>
+        <button type="submit" name="log_type" value="debug">Debug Log</button>
+    </form>
+  
+    {% if log_type %}
+            <h2>{{ log_type|title }} Log</h2>
+            <pre>{{ output }}</pre>
+    {% endif %}
+</body>
+</html> 
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="static/css/viewLog.css">
+    <title>Hughes Home Page</title>
+</head>
+
+<body>
+    <div class="main">
+        <nav>
+            <div class="menu-icon">
+                <div class="line-1"></div>
+                <div class="line-2"></div>
+                <div class="line-3"></div>
+            </div>
+            <div class="hughes-title"><h3>Log View</h3></div>
+            <button class="logout_btn">Logout</button>
+        </nav>
+        <div class="main-body">
+            <div class="menu-list">
+                <ul class="nav-links">
+                    <!--<a href="#">Traffic Log</a>
+                    <a href="#">Connection Log</a>
+                    <a href="#">ConnNew Log</a>
+                    <a href="#">Vuurmuur Log</a>
+                    <a href="#">Audit Log</a>
+                    <a href="#">Error Log</a>
+                    <a href="#">Debug Log</a>
+                    <div onclick="sendLog('traffic')">Traffic Log</div>
+                    <div onclick="sendLog('connection')">Connection Log</div>
+                    <div onclick="sendLog('connNew')">ConnNew Log</div>
+                    <div onclick="sendLog('Vuurmuur')">Vuurmuur Log</div>
+                    <div onclick="sendLog('audit')">Audit Log</div>
+                    <div onclick="sendLog('error')">Error Log</div>
+                    <div onclick="sendLog('debug')">Debug Log</div>
+                    
+        
+                </ul>
+            </div>
+            <div class="content">
+                <h1>You have to show logs here.</h1>
+               <!-- {% if error %}
+                    <p>Error: {{ error }}</p>
+                {% else %}
+                    <h2>Log Type: {{ log_type }}</h2>
+                    <pre>{{ output|escape }}</pre>
+                {% endif %} 
+            </div>
+        </div>
+    </div>
+    <script src="/static/js/viewLog.js"></script>
+</body>
+
+</html> -->

@@ -1,0 +1,136 @@
+2025-07-01 16:11:04,526 - Starting Traffic Processing Pipeline
+2025-07-01 16:11:04,527 - Config Grasper: Reading configuration
+2025-07-01 16:11:04,527 - PF Ring Capture: Capturing packet 0
+2025-07-01 16:11:04,527 - PF Ring Capture: Capturing packet 1
+2025-07-01 16:11:04,527 - PF Ring Capture: Capturing packet 2
+2025-07-01 16:11:04,527 - PF Ring Capture: Capturing packet 3
+2025-07-01 16:11:04,527 - PF Ring Capture: Capturing packet 4
+2025-07-01 16:11:04,527 - PF Ring Capture: Capturing packet 5
+2025-07-01 16:11:04,528 - PF Ring Capture: Capturing packet 6
+2025-07-01 16:11:04,528 - PF Ring Capture: Capturing packet 7
+2025-07-01 16:11:04,528 - PF Ring Capture: Capturing packet 8
+2025-07-01 16:11:04,528 - PF Ring Capture: Capturing packet 9
+2025-07-01 16:11:04,528 - Decapsulation: Processing packet 0, protocol udp
+2025-07-01 16:11:04,528 - Decapsulation: Processing packet 1, protocol tcp
+2025-07-01 16:11:04,528 - Decapsulation: Processing packet 2, protocol igmp
+2025-07-01 16:11:04,529 - Decapsulation: Processing packet 3, protocol icmp
+2025-07-01 16:11:04,529 - Decapsulation: Processing packet 4, protocol udp
+2025-07-01 16:11:04,529 - Vuurmuur Basic Filter: Processing packet 0, protocol udp
+2025-07-01 16:11:04,529 - Decapsulation: Processing packet 5, protocol igmp
+2025-07-01 16:11:04,529 - Vuurmuur Basic Filter: Processing packet 1, protocol tcp
+2025-07-01 16:11:04,529 - Decapsulation: Processing packet 6, protocol icmp
+2025-07-01 16:11:04,530 - Vuurmuur Basic Filter: Processing packet 2, protocol igmp
+2025-07-01 16:11:04,530 - Decapsulation: Processing packet 7, protocol udp
+2025-07-01 16:11:04,530 - Vuurmuur Basic Filter: Processing packet 3, protocol icmp
+2025-07-01 16:11:04,530 - Decapsulation: Processing packet 8, protocol icmp
+2025-07-01 16:11:04,530 - nDPI: Classifying packet 4
+2025-07-01 16:11:04,530 - Vuurmuur Basic Filter: Processing packet 4, protocol udp
+2025-07-01 16:11:04,530 - Decapsulation: Processing packet 9, protocol icmp
+2025-07-01 16:11:04,530 - Vuurmuur Basic Filter: Processing packet 5, protocol igmp
+2025-07-01 16:11:04,531 - Vuurmuur Basic Filter: Dropping packet 2
+2025-07-01 16:11:04,531 - Vuurmuur Basic Filter: Processing packet 6, protocol icmp
+2025-07-01 16:11:04,532 - Vuurmuur Basic Filter: Dropping packet 5
+2025-07-01 16:11:04,532 - Vuurmuur App-Aware: Processing packet 0, app None
+2025-07-01 16:11:04,532 - Vuurmuur App-Aware: Processing packet 1, app None
+2025-07-01 16:11:04,532 - Vuurmuur App-Aware: Processing packet 4, app unknown
+2025-07-01 16:11:04,532 - Vuurmuur App-Aware: Processing packet 4, app unknown
+2025-07-01 16:11:04,533 - Tunneling: Processing packet 0
+2025-07-01 16:11:04,533 - Tunneling: Processing packet 1
+2025-07-01 16:11:04,533 - Tunneling: Processing packet 4
+2025-07-01 16:11:04,533 - Tunneling: Processing packet 4
+2025-07-01 16:11:04,534 - FRR Routing: Processing packet 0
+2025-07-01 16:11:04,534 - FRR Routing: Processing packet 1
+2025-07-01 16:11:04,535 - FRR Routing: Processing packet 4
+2025-07-01 16:11:04,537 - Compression: Processing packet 0
+2025-07-01 16:11:04,536 - BBR Congestion Control: Processing packet 1
+2025-07-01 16:11:04,535 - FRR Routing: Processing packet 4
+2025-07-01 16:11:04,538 - Compression: Processing packet 1
+2025-07-01 16:11:04,538 - Compression: Processing packet 4
+2025-07-01 16:11:04,541 - Compression: Processing packet 4
+2025-07-01 16:11:04,543 - RAPTORQ Encoding: Processing packet 0
+2025-07-01 16:11:04,544 - RAPTORQ Encoding: Processing packet 1
+2025-07-01 16:11:04,544 - RAPTORQ Encoding: Processing packet 4
+2025-07-01 16:11:04,544 - RAPTORQ Encoding: Processing packet 4
+2025-07-01 16:11:04,545 - QoS Policies: Processing packet 0
+2025-07-01 16:11:04,546 - QoS Policies: Processing packet 1
+2025-07-01 16:11:04,546 - Linux TC Shaping: Processing packet 0
+2025-07-01 16:11:04,546 - QoS Policies: Processing packet 4
+2025-07-01 16:11:04,546 - Executing TC command: tc qdisc add dev eth1 root handle 1: htb default 10
+2025-07-01 16:11:04,546 - QoS Policies: Processing packet 4
+2025-07-01 16:11:04,546 - Executing TC command: tc class add dev eth1 parent 1: classid 1:1 htb rate 100mbit ceil 100mbit
+2025-07-01 16:11:04,546 - WAN Output: Sending packet 3
+2025-07-01 16:11:04,547 - Executing TC command: tc class add dev eth1 parent 1:1 classid 1:10 htb rate 50mbit ceil 100mbit prio 0
+2025-07-01 16:11:04,547 - WAN Output: Sending packet 6
+2025-07-01 16:11:04,547 - Receiver: Processing packet 3
+2025-07-01 16:11:04,547 - Executing TC command: tc class add dev eth1 parent 1:1 classid 1:20 htb rate 30mbit ceil 50mbit prio 1
+2025-07-01 16:11:04,548 - Receiver: Processing packet 6
+2025-07-01 16:11:04,549 - Decode & Decompress: Processing packet 3
+2025-07-01 16:11:04,549 - Executing TC command: tc class add dev eth1 parent 1:1 classid 1:30 htb rate 10mbit ceil 20mbit prio 2
+2025-07-01 16:11:04,549 - Decode & Decompress: Processing packet 6
+2025-07-01 16:11:04,550 - Error Handling: Processing packet 3
+2025-07-01 16:11:04,550 - Executing TC command: tc qdisc add dev eth1 parent 1:10 handle 10: sfq perturb 10
+2025-07-01 16:11:04,550 - Error Handling: Processing packet 6
+2025-07-01 16:11:04,551 - Executing TC command: tc qdisc add dev eth1 parent 1:20 handle 20: sfq perturb 10
+2025-07-01 16:11:04,552 - Forward to Destination: Processing packet 3
+2025-07-01 16:11:04,552 - Executing TC command: tc qdisc add dev eth1 parent 1:30 handle 30: sfq perturb 10
+2025-07-01 16:11:04,552 - Forward to Destination: Processing packet 6
+2025-07-01 16:11:04,552 - Executing TC command: tc filter add dev eth1 protocol ip parent 1:0 prio 0 u32 match ip dport 80 0xffff flowid 1:10
+2025-07-01 16:11:04,552 - Executing TC command: tc filter add dev eth1 protocol ip parent 1:0 prio 1 u32 match ip sport 5060 0xffff flowid 1:20
+2025-07-01 16:11:04,552 - Executing TC command: tc filter add dev eth1 protocol ip parent 1:0 prio 2 u32 match ip dport 21 0xffff flowid 1:30
+2025-07-01 16:11:04,552 - Linux TC Shaping: Processing packet 1
+2025-07-01 16:11:04,552 - Executing TC command: tc qdisc add dev eth1 root handle 1: htb default 10
+2025-07-01 16:11:04,552 - Executing TC command: tc class add dev eth1 parent 1: classid 1:1 htb rate 100mbit ceil 100mbit
+2025-07-01 16:11:04,553 - WAN Output: Sending packet 0
+2025-07-01 16:11:04,553 - Executing TC command: tc class add dev eth1 parent 1:1 classid 1:10 htb rate 50mbit ceil 100mbit prio 0
+2025-07-01 16:11:04,553 - Receiver: Processing packet 0
+2025-07-01 16:11:04,553 - Executing TC command: tc class add dev eth1 parent 1:1 classid 1:20 htb rate 30mbit ceil 50mbit prio 1
+2025-07-01 16:11:04,553 - Decode & Decompress: Processing packet 0
+2025-07-01 16:11:04,553 - Executing TC command: tc class add dev eth1 parent 1:1 classid 1:30 htb rate 10mbit ceil 20mbit prio 2
+2025-07-01 16:11:04,554 - Error Handling: Processing packet 0
+2025-07-01 16:11:04,554 - Executing TC command: tc qdisc add dev eth1 parent 1:10 handle 10: sfq perturb 10
+2025-07-01 16:11:04,554 - Forward to Destination: Processing packet 0
+2025-07-01 16:11:04,554 - Executing TC command: tc qdisc add dev eth1 parent 1:20 handle 20: sfq perturb 10
+2025-07-01 16:11:04,554 - Executing TC command: tc qdisc add dev eth1 parent 1:30 handle 30: sfq perturb 10
+2025-07-01 16:11:04,554 - Executing TC command: tc filter add dev eth1 protocol ip parent 1:0 prio 0 u32 match ip dport 80 0xffff flowid 1:10
+2025-07-01 16:11:04,554 - Executing TC command: tc filter add dev eth1 protocol ip parent 1:0 prio 1 u32 match ip sport 5060 0xffff flowid 1:20
+2025-07-01 16:11:04,555 - Executing TC command: tc filter add dev eth1 protocol ip parent 1:0 prio 2 u32 match ip dport 21 0xffff flowid 1:30
+2025-07-01 16:11:04,555 - Linux TC Shaping: Processing packet 4
+2025-07-01 16:11:04,555 - WAN Output: Sending packet 1
+2025-07-01 16:11:04,555 - Executing TC command: tc qdisc add dev eth1 root handle 1: htb default 10
+2025-07-01 16:11:04,555 - Receiver: Processing packet 1
+2025-07-01 16:11:04,555 - Executing TC command: tc class add dev eth1 parent 1: classid 1:1 htb rate 100mbit ceil 100mbit
+2025-07-01 16:11:04,555 - Decode & Decompress: Processing packet 1
+2025-07-01 16:11:04,555 - Executing TC command: tc class add dev eth1 parent 1:1 classid 1:10 htb rate 50mbit ceil 100mbit prio 0
+2025-07-01 16:11:04,555 - Error Handling: Processing packet 1
+2025-07-01 16:11:04,556 - Executing TC command: tc class add dev eth1 parent 1:1 classid 1:20 htb rate 30mbit ceil 50mbit prio 1
+2025-07-01 16:11:04,556 - Forward to Destination: Processing packet 1
+2025-07-01 16:11:04,556 - Executing TC command: tc class add dev eth1 parent 1:1 classid 1:30 htb rate 10mbit ceil 20mbit prio 2
+2025-07-01 16:11:04,556 - Executing TC command: tc qdisc add dev eth1 parent 1:10 handle 10: sfq perturb 10
+2025-07-01 16:11:04,556 - Executing TC command: tc qdisc add dev eth1 parent 1:20 handle 20: sfq perturb 10
+2025-07-01 16:11:04,556 - Executing TC command: tc qdisc add dev eth1 parent 1:30 handle 30: sfq perturb 10
+2025-07-01 16:11:04,556 - Executing TC command: tc filter add dev eth1 protocol ip parent 1:0 prio 0 u32 match ip dport 80 0xffff flowid 1:10
+2025-07-01 16:11:04,556 - Executing TC command: tc filter add dev eth1 protocol ip parent 1:0 prio 1 u32 match ip sport 5060 0xffff flowid 1:20
+2025-07-01 16:11:04,556 - Executing TC command: tc filter add dev eth1 protocol ip parent 1:0 prio 2 u32 match ip dport 21 0xffff flowid 1:30
+2025-07-01 16:11:04,556 - Linux TC Shaping: Processing packet 4
+2025-07-01 16:11:04,556 - Executing TC command: tc qdisc add dev eth1 root handle 1: htb default 10
+2025-07-01 16:11:04,556 - WAN Output: Sending packet 4
+2025-07-01 16:11:04,556 - Executing TC command: tc class add dev eth1 parent 1: classid 1:1 htb rate 100mbit ceil 100mbit
+2025-07-01 16:11:04,556 - Executing TC command: tc class add dev eth1 parent 1:1 classid 1:10 htb rate 50mbit ceil 100mbit prio 0
+2025-07-01 16:11:04,556 - Receiver: Processing packet 4
+2025-07-01 16:11:04,556 - Executing TC command: tc class add dev eth1 parent 1:1 classid 1:20 htb rate 30mbit ceil 50mbit prio 1
+2025-07-01 16:11:04,556 - Executing TC command: tc class add dev eth1 parent 1:1 classid 1:30 htb rate 10mbit ceil 20mbit prio 2
+2025-07-01 16:11:04,556 - Decode & Decompress: Processing packet 4
+2025-07-01 16:11:04,557 - Executing TC command: tc qdisc add dev eth1 parent 1:10 handle 10: sfq perturb 10
+2025-07-01 16:11:04,557 - Error Handling: Processing packet 4
+2025-07-01 16:11:04,557 - Executing TC command: tc qdisc add dev eth1 parent 1:20 handle 20: sfq perturb 10
+2025-07-01 16:11:04,557 - Forward to Destination: Processing packet 4
+2025-07-01 16:11:04,557 - Executing TC command: tc qdisc add dev eth1 parent 1:30 handle 30: sfq perturb 10
+2025-07-01 16:11:04,557 - Executing TC command: tc filter add dev eth1 protocol ip parent 1:0 prio 0 u32 match ip dport 80 0xffff flowid 1:10
+2025-07-01 16:11:04,557 - Executing TC command: tc filter add dev eth1 protocol ip parent 1:0 prio 1 u32 match ip sport 5060 0xffff flowid 1:20
+2025-07-01 16:11:04,557 - Executing TC command: tc filter add dev eth1 protocol ip parent 1:0 prio 2 u32 match ip dport 21 0xffff flowid 1:30
+2025-07-01 16:11:04,557 - WAN Output: Sending packet 4
+2025-07-01 16:11:04,557 - Receiver: Processing packet 4
+2025-07-01 16:11:04,557 - Decode & Decompress: Processing packet 4
+2025-07-01 16:11:04,557 - Error Handling: Processing packet 4
+2025-07-01 16:11:04,557 - Forward to Destination: Processing packet 4
+2025-07-01 16:11:04,858 - Pipeline processing complete

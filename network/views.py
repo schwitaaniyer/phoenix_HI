@@ -13,6 +13,43 @@ from django.contrib.auth.decorators import login_required
 from .models import BondInterface, BondStatistics
 from .forms import BondInterfaceForm
 
+class RuleForm(forms.Form):
+    CHAIN_CHOICES = [('input', 'Input'), ('output', 'Output'), ('forward', 'Forward')]
+    ACTION_CHOICES = [('accept', 'Accept'), ('drop', 'Drop'), ('reject', 'Reject')]
+    PROTOCOL_CHOICES = [('tcp', 'TCP'), ('udp', 'UDP'), ('icmp', 'ICMP'), ('all', 'All')]
+    
+    chain = forms.ChoiceField(choices=CHAIN_CHOICES)
+    source = forms.CharField()
+    destination = forms.CharField()
+    protocol = forms.ChoiceField(choices=PROTOCOL_CHOICES)
+    action = forms.ChoiceField(choices=ACTION_CHOICES)
+    options = forms.CharField(required=False)
+
+class ZoneForm(forms.Form):
+    POLICY_CHOICES = [('accept', 'Accept'), ('drop', 'Drop'), ('reject', 'Reject')]
+    
+    name = forms.CharField(max_length=50)
+    interfaces = forms.CharField()
+    policy = forms.ChoiceField(choices=POLICY_CHOICES)
+
+class NATForm(forms.Form):
+    TYPE_CHOICES = [
+        ('masquerade', 'Masquerade'),
+        ('src-nat', 'Source NAT'),
+        ('dst-nat', 'Destination NAT')
+    ]
+    
+    type = forms.ChoiceField(choices=TYPE_CHOICES)
+    source = forms.CharField(required=False)
+    destination = forms.CharField(required=False)
+    translate = forms.CharField()
+
+class LogForm(forms.Form):
+    LEVEL_CHOICES = [('emerg', 'Emergency'), ('alert', 'Alert'), ('crit', 'Critical')]
+    
+    level = forms.ChoiceField(choices=LEVEL_CHOICES)
+    prefix = forms.CharField(required=False)
+
 # Routing Views
 class RoutingView(LoginRequiredMixin, View):
     template_name = 'network/routing.html'
@@ -903,3 +940,17 @@ def mptcp_monitor(request):
 class MPTCPView(LoginRequiredMixin, View):
     def get(self, request):
         return render(request, 'network/mptcp.html')
+
+def firewall_view(request):
+    context = {
+        'rule_form': RuleForm(),
+        'zone_form': ZoneForm(),
+        'nat_form': NATForm(),
+        'log_form': LogForm(),
+        'rules': [],
+        'zones': [],
+        'nats': [],
+        'logs': [],
+        'active_tab': request.GET.get('tab', 'rules'),
+    }
+    return render(request, 'network/firewall.html', context)

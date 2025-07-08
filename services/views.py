@@ -19,6 +19,7 @@ import ipaddress
 import re
 from datetime import datetime, timedelta
 import secrets
+import shutil
 
 # IPSec Views
 def read_swanctl_conf():
@@ -447,6 +448,47 @@ class SNMPView(LoginRequiredMixin, View):
         return JsonResponse({'success': False, 'error': 'Invalid action'})
 
 # IPS/IDS Views
+SNORT_CONF_FILE = '/etc/snort/snort.conf'
+
+# Helper functions for Snort config management
+
+def read_snort_config():
+    config = {'HOME_NET': '', 'EXTERNAL_NET': ''}
+    try:
+        with open(SNORT_CONF_FILE, 'r') as f:
+            for line in f:
+                if line.startswith('var HOME_NET'):
+                    config['HOME_NET'] = line.split('HOME_NET')[1].strip().lstrip('"').rstrip('"')
+                elif line.startswith('var EXTERNAL_NET'):
+                    config['EXTERNAL_NET'] = line.split('EXTERNAL_NET')[1].strip().lstrip('"').rstrip('"')
+        return config
+    except Exception:
+        return config
+
+def update_snort_config(home_net, external_net):
+    try:
+        lines = []
+        with open(SNORT_CONF_FILE, 'r') as f:
+            for line in f:
+                if line.startswith('var HOME_NET'):
+                    lines.append(f'var HOME_NET {home_net}\n')
+                elif line.startswith('var EXTERNAL_NET'):
+                    lines.append(f'var EXTERNAL_NET {external_net}\n')
+                else:
+                    lines.append(line)
+        with open(SNORT_CONF_FILE, 'w') as f:
+            f.writelines(lines)
+        return True
+    except Exception:
+        return False
+
+def restart_snort():
+    try:
+        subprocess.run(['systemctl', 'restart', 'snort'], check=True)
+        return True
+    except Exception:
+        return False
+
 class IPSIDSView(LoginRequiredMixin, View):
     def get(self, request):
         # Get Snort status
@@ -454,50 +496,22 @@ class IPSIDSView(LoginRequiredMixin, View):
             status = subprocess.check_output(['systemctl', 'status', 'snort']).decode('utf-8')
         except:
             status = "Unable to retrieve Snort status"
-        
-        # Simulate rules
-        rules = [
-            {
-                'sid': 1000001,
-                'action': 'alert',
-                'protocol': 'tcp',
-                'source': 'any',
-                'destination': '$HOME_NET',
-                'message': 'TEST rule',
-                'enabled': True
-            },
-            {
-                'sid': 1000002,
-                'action': 'drop',
-                'protocol': 'udp',
-                'source': 'any',
-                'destination': '$HOME_NET',
-                'message': 'Block suspicious UDP',
-                'enabled': False
-            }
-        ]
-        
-        # Simulate alerts
-        alerts = [
-            {
-                'timestamp': '2023-10-15 14:30:22',
-                'priority': 'high',
-                'source': '192.168.1.100',
-                'destination': '10.0.0.5',
-                'message': 'Possible exploit attempt'
-            }
-        ]
-        
+
+        # Get real rules and alerts
+        rules = read_snort_rules()
+        alerts = parse_snort_alerts()
+        config = read_snort_config()
+
         # Form for IPS configuration
         class ConfigForm(forms.Form):
             MODE_CHOICES = [('ips', 'IPS'), ('ids', 'IDS')]
-            
             mode = forms.ChoiceField(choices=MODE_CHOICES)
             interface = forms.CharField()
             home_net = forms.CharField()
+            external_net = forms.CharField()
             detection = forms.BooleanField(required=False)
             prevention = forms.BooleanField(required=False)
-        
+
         # Form for rule configuration
         class RuleForm(forms.Form):
             ACTION_CHOICES = [
@@ -512,13 +526,12 @@ class IPSIDSView(LoginRequiredMixin, View):
                 ('icmp', 'ICMP'),
                 ('ip', 'IP')
             ]
-            
             action = forms.ChoiceField(choices=ACTION_CHOICES)
             protocol = forms.ChoiceField(choices=PROTOCOL_CHOICES)
             source = forms.CharField()
             destination = forms.CharField()
             message = forms.CharField()
-        
+
         return render(request, 'services/ips_ids.html', {
             'status': status,
             'rules': rules,
@@ -526,30 +539,40 @@ class IPSIDSView(LoginRequiredMixin, View):
             'config_form': ConfigForm(initial={
                 'mode': 'ips',
                 'interface': 'eth0',
-                'home_net': '192.168.1.0/24',
+                'home_net': config.get('HOME_NET', '192.168.1.0/24'),
+                'external_net': config.get('EXTERNAL_NET', 'any'),
                 'detection': True,
                 'prevention': True
             }),
             'rule_form': RuleForm()
         })
-    
+
     def post(self, request):
         action = request.POST.get('action')
-        
         if action == 'start_snort':
             try:
                 subprocess.run(['systemctl', 'start', 'snort'], check=True)
                 return JsonResponse({'success': True})
             except subprocess.CalledProcessError as e:
                 return JsonResponse({'success': False, 'error': str(e)})
-        
         elif action == 'stop_snort':
             try:
                 subprocess.run(['systemctl', 'stop', 'snort'], check=True)
                 return JsonResponse({'success': True})
             except subprocess.CalledProcessError as e:
                 return JsonResponse({'success': False, 'error': str(e)})
-        
+        elif action == 'save_config':
+            home_net = request.POST.get('home_net')
+            external_net = request.POST.get('external_net')
+            if home_net and external_net:
+                success = update_snort_config(home_net, external_net)
+                if success:
+                    restart_snort()
+                    return JsonResponse({'success': True})
+                else:
+                    return JsonResponse({'success': False, 'error': 'Failed to update config'})
+            else:
+                return JsonResponse({'success': False, 'error': 'Missing config values'})
         return JsonResponse({'success': False, 'error': 'Invalid action'})
 
 # Risk Analysis Views
@@ -956,3 +979,165 @@ def delete_protocol(request):
         # ...
         return JsonResponse({'success': True, 'message': f'Protocol deleted from protos.txt'})
     return JsonResponse({'error': 'Invalid request method'}, status=405)
+
+SNORT_RULES_FILE = '/etc/snort/rules/local.rules'
+
+# Helper functions for Snort rule management
+
+def read_snort_rules():
+    rules = []
+    try:
+        with open(SNORT_RULES_FILE, 'r') as f:
+            for line in f:
+                line = line.strip()
+                if line and not line.startswith('#'):
+                    # Parse rule (very basic, can be improved)
+                    parts = line.split(' ', 6)
+                    if len(parts) >= 6:
+                        action, proto, src, src_port, direction, dst, rest = parts[0], parts[1], parts[2], parts[3], parts[4], parts[5], parts[6]
+                        sid = None
+                        msg = ''
+                        enabled = not line.startswith('#')
+                        # Extract sid and msg from options
+                        if 'sid:' in rest:
+                            try:
+                                sid = int(rest.split('sid:')[1].split(';')[0].strip())
+                            except Exception:
+                                sid = None
+                        if 'msg:"' in rest:
+                            try:
+                                msg = rest.split('msg:"')[1].split('";')[0]
+                            except Exception:
+                                msg = ''
+                        rules.append({
+                            'sid': sid,
+                            'action': action,
+                            'protocol': proto,
+                            'source': src,
+                            'source_port': src_port,
+                            'direction': direction,
+                            'destination': dst,
+                            'raw': line,
+                            'message': msg,
+                            'enabled': enabled
+                        })
+        return rules
+    except Exception as e:
+        return []
+
+def write_snort_rules(rules):
+    try:
+        with open(SNORT_RULES_FILE, 'w') as f:
+            for rule in rules:
+                f.write(rule['raw'] + '\n')
+        return True
+    except Exception as e:
+        return False
+
+def add_snort_rule(rule_text):
+    try:
+        with open(SNORT_RULES_FILE, 'a') as f:
+            f.write(rule_text + '\n')
+        return True
+    except Exception as e:
+        return False
+
+def delete_snort_rule(sid):
+    rules = read_snort_rules()
+    new_rules = [r for r in rules if r['sid'] != sid]
+    return write_snort_rules(new_rules)
+
+def update_snort_rule(sid, new_rule_text):
+    rules = read_snort_rules()
+    updated = False
+    for i, r in enumerate(rules):
+        if r['sid'] == sid:
+            rules[i]['raw'] = new_rule_text
+            updated = True
+    if updated:
+        return write_snort_rules(rules)
+    return False
+
+# API endpoints for rule management
+from django.views.decorators.http import require_POST
+from django.utils.decorators import method_decorator
+
+@method_decorator(csrf_exempt, name='dispatch')
+class SnortRuleAPI(View):
+    def get(self, request):
+        # List rules
+        rules = read_snort_rules()
+        return JsonResponse({'rules': rules})
+
+    def post(self, request):
+        # Add rule
+        data = json.loads(request.body.decode('utf-8'))
+        rule_text = data.get('rule_text')
+        if not rule_text:
+            return JsonResponse({'success': False, 'error': 'No rule text provided'})
+        success = add_snort_rule(rule_text)
+        return JsonResponse({'success': success})
+
+    def put(self, request):
+        # Edit rule
+        data = json.loads(request.body.decode('utf-8'))
+        sid = data.get('sid')
+        rule_text = data.get('rule_text')
+        if not sid or not rule_text:
+            return JsonResponse({'success': False, 'error': 'SID and rule text required'})
+        success = update_snort_rule(sid, rule_text)
+        return JsonResponse({'success': success})
+
+    def delete(self, request):
+        # Delete rule
+        data = json.loads(request.body.decode('utf-8'))
+        sid = data.get('sid')
+        if not sid:
+            return JsonResponse({'success': False, 'error': 'SID required'})
+        success = delete_snort_rule(sid)
+        return JsonResponse({'success': success})
+
+SNORT_ALERT_LOG = '/var/log/snort/alert'
+
+def parse_snort_alerts():
+    alerts = []
+    try:
+        with open(SNORT_ALERT_LOG, 'r') as f:
+            for line in f:
+                line = line.strip()
+                if not line:
+                    continue
+                # Example Snort alert log line parsing (unified2 or fast format)
+                # This is a simple parser for the 'fast' format
+                # [**] [1:1000001:0] TEST rule [**] [Priority: 1] 10/15-14:30:22.123456 192.168.1.100 -> 10.0.0.5
+                if line.startswith('[**]'):
+                    try:
+                        parts = line.split(']')
+                        msg = parts[1].split('[')[0].strip()
+                        sid = int(parts[1].split(':')[1])
+                        priority = int(parts[2].split(':')[1].strip())
+                        # Next line should have timestamp and IPs
+                        next_line = next(f).strip()
+                        ts_ip = next_line.split()
+                        timestamp = ts_ip[0] if len(ts_ip) > 0 else ''
+                        src = ts_ip[1] if len(ts_ip) > 1 else ''
+                        dst = ts_ip[3] if len(ts_ip) > 3 else ''
+                        alerts.append({
+                            'sid': sid,
+                            'message': msg,
+                            'priority': priority,
+                            'timestamp': timestamp,
+                            'source': src,
+                            'destination': dst
+                        })
+                    except Exception:
+                        continue
+        return alerts
+    except Exception as e:
+        return []
+
+@method_decorator(csrf_exempt, name='dispatch')
+class SnortAlertAPI(View):
+    def get(self, request):
+        alerts = parse_snort_alerts()
+        return JsonResponse({'alerts': alerts})

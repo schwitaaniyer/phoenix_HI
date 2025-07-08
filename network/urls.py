@@ -1,12 +1,11 @@
 from django.urls import path
 from .views import (
-    FirewallView, OptimisationView, BondingView, 
+    OptimisationView, BondingView, 
     MonitorView, DPIView, RoutingView, MPTCPView,
     mptcp_endpoint_show, mptcp_endpoint_add, mptcp_endpoint_delete,
     mptcp_endpoint_change, mptcp_limits_show, mptcp_limits_set,
-    mptcp_monitor
+    mptcp_monitor, firewall_view
 )
-from . import views
 from .monitor_views import (
     monitor_config_view, monitor_analysis_view, get_monitor_config, get_monitor_status
 )
@@ -15,7 +14,6 @@ app_name = 'network'
 
 urlpatterns = [
     path('routing/', RoutingView.as_view(), name='routing'),
-    path('firewall/', FirewallView.as_view(), name='firewall'),
     path('optimisation/', OptimisationView.as_view(), name='optimisation'),
     path('bonding/', BondingView.as_view(), name='bonding'),
     path('monitor/', MonitorView.as_view(), name='monitor'),
@@ -33,4 +31,5 @@ urlpatterns = [
     path('monitor/analysis/', monitor_analysis_view, name='monitor_analysis'),
     path('monitor/get_config/', get_monitor_config, name='monitor_get_config'),
     path('monitor/get_status/', get_monitor_status, name='monitor_get_status'),
+    path('firewall/', firewall_view, name='firewall'),
 ]

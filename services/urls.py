@@ -1,5 +1,6 @@
 from django.urls import path
 from . import views
+from .views import SnortRuleAPI, SnortAlertAPI
 
 app_name = 'services'
 
@@ -22,6 +23,8 @@ urlpatterns = [
     
     # IPS/IDS Services
     path('ips-ids/', views.IPSIDSView.as_view(), name='ips_ids'),
+    path('ips-ids/rules/', SnortRuleAPI.as_view(), name='snort_rules_api'),
+    path('ips-ids/alerts/', SnortAlertAPI.as_view(), name='snort_alerts_api'),
     
     # Risk Analysis
     path('risk-analysis/', views.risk_analysis_view, name='risk_analysis'),

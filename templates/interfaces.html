@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/static/css/plugins.css">
+    <title>Interfaces Page</title>
+</head>
+
+<body>
+    <div class="main">
+        <nav>
+            <div>
+                <div class="menu-icon">
+                    <div class="line-1"></div>
+                    <div class="line-2"></div>
+                    <div class="line-3"></div>
+                </div>
+                <div class="hughes-title">
+                    <h3>Interfaces</h3>
+                </div>
+            </div>
+            <div class="nav-child2">
+                <div class="nav-home-logo"><svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <g id="SVGRepo_bgCarrier" stroke-width="0"></g>
+                        <g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g>
+                        <g id="SVGRepo_iconCarrier">
+                            <path fill-rule="evenodd" clip-rule="evenodd"
+                                d="M21.4498 10.275L11.9998 3.1875L2.5498 10.275L2.9998 11.625H3.7498V20.25H20.2498V11.625H20.9998L21.4498 10.275ZM5.2498 18.75V10.125L11.9998 5.0625L18.7498 10.125V18.75H14.9999V14.3333L14.2499 13.5833H9.74988L8.99988 14.3333V18.75H5.2498ZM10.4999 18.75H13.4999V15.0833H10.4999V18.75Z"
+                                fill="#ffffff"></path>
+                        </g>
+                    </svg></div>
+                <button class="logout_btn">Logout</button>
+                <div class="theme_button">
+                    <div class="theme_button_child"></div>
+                </div>
+            </div>
+
+
+        </nav>
+
+        <div class="main-body">
+            
+            <div class="content">
+
+                <div class="table">
+                
+                    <!-- Form for adding a Interface -->
+                    <form method="post" >
+                        {% csrf_token %} 
+                        <label for="command">Add Interface:</label>
+                        <input type="text" class="form-control" id="command" name="command" required>
+                        <button type="submit" class="btn btn-primary">Add Interface</button>
+                    </form>  <!--done-->
+                    
+                    
+                    <!-- Form for deleting a Interface -->
+                    <form method="post" >
+                        {% csrf_token %}
+                        <label for="delete">Delete Interface:</label>
+                        <input type="text" class="form-control" id="delete" name="delete" required>
+                        <button type="submit" class="btn btn-primary">Delete Interface</button>
+                    </form>  <!-- done -->
+                    
+                    
+                    <!-- Form for renaming a zone -->
+                    <form method="post" >
+                        {% csrf_token %}
+                        <label for="old_name">Old Interface Name:</label>
+                        <input type="text" class="form-control" id="old_name" name="old_name" required>
+                        <label for="new_name">New Interface Name:</label>
+                        <input type="text" class="form-control" id="new_name" name="new_name" required>
+                        <button type="submit" class="btn btn-primary">Rename Interface</button>
+                    </form>  <!-- done -->
+
+                    
+                        <!-- Display result if available -->
+                        {% if result %}
+                        <div class="mt-4">
+                            <h4>Result:</h4>
+                            <pre>{{ result }}</pre>
+                        </div>
+                        {% endif %}
+
+
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="/static/js/plugins.js"></script>
+</body>
+
+</html>

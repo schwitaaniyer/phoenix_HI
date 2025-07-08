@@ -1,0 +1,45 @@
+<!-- blocklists.html -->
+{% extends 'base.html' %}
+
+{% block title %}Blocklists{% endblock title %}
+
+{% block body %}
+
+<div class="container-fluid px-0">
+    <div class="container mt-5 bg-light p-4">
+        <!-- Form for blocking -->
+        <form method="post">
+            {% csrf_token %}
+            <div class="form-group">
+                <label for="ip_host_group_block">IP/Host/Group:</label>
+                <input type="text" class="form-control" id="ip_host_group_block" name="ip_host_group" required>
+            </div>
+            <!--<input type="hidden" name="action" value="block">-->
+            <button type="submit" class="btn btn-primary">Block</button>
+        </form>
+
+        <!-- Form for unblocking -->
+        <form method="post">
+            {% csrf_token %}
+            <div class="form-group">
+                <label for="ip_host_group_unblock">IP/Host/Group:</label>
+                <input type="text" class="form-control" id="ip_host_group_unblock" name="ip_host_group" required>
+            </div>
+            <!--<input type="hidden" name="action" value="unblock">-->
+            <button type="submit" class="btn btn-primary">Unblock</button>
+        </form>
+
+        <!-- Display result if available -->
+        {% if result %}
+            <div class="mt-4">
+                <h4>Result:</h4>
+                <pre>{{ result }}</pre>
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- Include Bootstrap JS (adjust the paths accordingly) -->
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/js/bootstrap.min.js"></script>
+{% endblock body %}
