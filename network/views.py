@@ -50,6 +50,48 @@ class LogForm(forms.Form):
     level = forms.ChoiceField(choices=LEVEL_CHOICES)
     prefix = forms.CharField(required=False)
 
+class DHCPServerForm(forms.Form):
+    interface = forms.CharField(label='Interface', max_length=50)
+    range_start = forms.GenericIPAddressField(label='Range Start')
+    range_end = forms.GenericIPAddressField(label='Range End')
+    lease_time = forms.IntegerField(label='Lease Time (minutes)', min_value=1)
+    router = forms.GenericIPAddressField(label='Router (Gateway)', required=False)
+    dns = forms.CharField(label='DNS Servers (comma-separated)', required=False)
+
+class DHCPServerView(LoginRequiredMixin, View):
+    template_name = 'network/dhcp.html'
+
+    def get_config(self):
+        # Placeholder: Load config from file or system
+        import os, json
+        config_path = os.path.join(os.path.dirname(__file__), 'dhcp_config.json')
+        if os.path.exists(config_path):
+            with open(config_path, 'r') as f:
+                return json.load(f)
+        return None
+
+    def save_config(self, config):
+        import os, json
+        config_path = os.path.join(os.path.dirname(__file__), 'dhcp_config.json')
+        with open(config_path, 'w') as f:
+            json.dump(config, f, indent=2)
+
+    def get(self, request):
+        config = self.get_config()
+        form = DHCPServerForm(initial=config) if config else DHCPServerForm()
+        return render(request, self.template_name, {'form': form, 'config': config})
+
+    def post(self, request):
+        form = DHCPServerForm(request.POST)
+        if form.is_valid():
+            config = form.cleaned_data
+            # Save config to file (or apply to system)
+            self.save_config(config)
+            messages.success(request, 'DHCP Server configuration saved.')
+            return redirect('network:dhcp')
+        config = self.get_config()
+        return render(request, self.template_name, {'form': form, 'config': config})
+
 # Routing Views
 class RoutingView(LoginRequiredMixin, View):
     template_name = 'network/routing.html'

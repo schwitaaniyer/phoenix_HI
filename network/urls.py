@@ -4,7 +4,7 @@ from .views import (
     MonitorView, DPIView, RoutingView, MPTCPView,
     mptcp_endpoint_show, mptcp_endpoint_add, mptcp_endpoint_delete,
     mptcp_endpoint_change, mptcp_limits_show, mptcp_limits_set,
-    mptcp_monitor, firewall_view
+    mptcp_monitor, firewall_view, DHCPServerView
 )
 from .monitor_views import (
     monitor_config_view, monitor_analysis_view, get_monitor_config, get_monitor_status
@@ -32,4 +32,5 @@ urlpatterns = [
     path('monitor/get_config/', get_monitor_config, name='monitor_get_config'),
     path('monitor/get_status/', get_monitor_status, name='monitor_get_status'),
     path('firewall/', firewall_view, name='firewall'),
+    path('dhcp/', DHCPServerView.as_view(), name='dhcp'),
 ]

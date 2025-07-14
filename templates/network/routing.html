@@ -197,6 +197,20 @@
                             </div>
                         </div>
                     </div>
+                    <!-- Vtysh Console Section -->
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <div class="card">
+                                <div class="card-header d-flex justify-content-between align-items-center">
+                                    <h5 class="mb-0">Vtysh Console</h5>
+                                    <button class="btn btn-sm btn-secondary" id="toggle-vtysh">Show/Hide Console</button>
+                                </div>
+                                <div class="card-body" id="vtysh-container" style="display:none;">
+                                    <div id="vtysh-terminal" style="height:400px;width:100%;background:black;"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                     <div class="row">
                         <div class="col-md-6">
                             <div class="card">
@@ -489,5 +503,48 @@ function refreshRoutingTable() {
     })
     .catch(error => console.error('Error:', error));
 }
+</script>
+{% endblock %}
+
+{% block extra_js %}
+<!-- xterm.js CDN -->
+<script src="https://cdn.jsdelivr.net/npm/xterm@5.3.0/lib/xterm.min.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/xterm@5.3.0/css/xterm.css" />
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const toggleBtn = document.getElementById('toggle-vtysh');
+    const vtyshContainer = document.getElementById('vtysh-container');
+    let term, socket, opened = false;
+    
+    toggleBtn.addEventListener('click', function() {
+        vtyshContainer.style.display = vtyshContainer.style.display === 'none' ? 'block' : 'none';
+        if (!opened) {
+            opened = true;
+            if (!term) {
+                term = new window.Terminal({cursorBlink: true, fontSize: 14, theme: {background: '#000'}});
+                term.open(document.getElementById('vtysh-terminal'));
+            }
+            if (!socket) {
+                let ws_scheme = window.location.protocol === "https:" ? "wss" : "ws";
+                let ws_path = ws_scheme + '://' + window.location.host + '/ws/vtysh/';
+                socket = new WebSocket(ws_path);
+                socket.onopen = function() {
+                    term.write('\x1b[32mConnected to vtysh\x1b[0m\r\n');
+                };
+                socket.onmessage = function(event) {
+                    term.write(event.data);
+                };
+                socket.onclose = function() {
+                    term.write('\r\n\x1b[31mDisconnected from vtysh\x1b[0m\r\n');
+                };
+                term.onData(function(data) {
+                    if (socket.readyState === WebSocket.OPEN) {
+                        socket.send(data);
+                    }
+                });
+            }
+        }
+    });
+});
 </script>
 {% endblock %}

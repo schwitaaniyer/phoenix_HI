@@ -49,6 +49,7 @@ INSTALLED_APPS = [
     'terminal',
     'crispy_forms',
     'crispy_bootstrap5',
+    'channels',
 ]
 
 MIDDLEWARE = [
@@ -81,6 +82,7 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'phoenix.wsgi.application'
+ASGI_APPLICATION = 'phoenix.asgi.application'
 
 
 # Database

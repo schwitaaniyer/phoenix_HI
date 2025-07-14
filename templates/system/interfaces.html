@@ -1,0 +1,486 @@
+{% extends "base.html" %}
+{% load crispy_forms_tags %}
+
+{% block title %}Interfaces Management{% endblock %}
+
+{% block content %}
+<div class="row mb-3">
+    <div class="col-md-12 d-flex gap-2">
+        <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#createVlanModal">Create VLAN</button>
+        <button class="btn btn-info" data-bs-toggle="modal" data-bs-target="#createBridgeModal">Create Network Bridge</button>
+        <button class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#createTeamModal">Create Team Network</button>
+    </div>
+</div>
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h4>Network Interfaces</h4>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Port</th>
+                                <th>Status</th>
+                                <th>Speed</th>
+                                <th>Duplex</th>
+                                <th>MAC Address</th>
+                                <th>IP Address</th>
+                                <th>MTU</th>
+                                <th>VLAN</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for port in ports %}
+                            <tr>
+                                <td>{{ port.name }}</td>
+                                <td>
+                                    <span class="badge bg-{% if port.status == 'up' %}success{% else %}danger{% endif %}">
+                                        {{ port.status }}
+                                    </span>
+                                </td>
+                                <td>{{ port.speed }}</td>
+                                <td>{{ port.duplex }}</td>
+                                <td>{{ port.mac_address }}</td>
+                                <td>{{ port.ip_address }}</td>
+                                <td>{{ port.mtu }}</td>
+                                <td>{{ port.vlan }}</td>
+                                <td>
+                                    <div class="btn-group btn-group-sm">
+                                        <button class="btn btn-primary" 
+                                                data-bs-toggle="modal" 
+                                                data-bs-target="#editPortModal"
+                                                data-port-name="{{ port.name }}"
+                                                data-port-speed="{{ port.speed }}"
+                                                data-port-duplex="{{ port.duplex }}"
+                                                data-port-mtu="{{ port.mtu }}"
+                                                data-port-vlan="{{ port.vlan }}">
+                                            Edit
+                                        </button>
+                                        <button class="btn btn-secondary edit-ip-btn" 
+                                                data-bs-toggle="modal" 
+                                                data-bs-target="#editIpModal"
+                                                data-port-name="{{ port.name }}"
+                                                data-port-ip="{{ port.ip_address }}">
+                                            Edit IP
+                                        </button>
+                                        <button class="btn btn-{% if port.status == 'up' %}danger{% else %}success{% endif %} toggle-port" 
+                                                data-port-name="{{ port.name }}"
+                                                data-current-status="{{ port.status }}">
+                                            {% if port.status == 'up' %}Disable{% else %}Enable{% endif %}
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="9" class="text-center">No ports found</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Create VLAN Modal -->
+<div class="modal fade" id="createVlanModal" tabindex="-1" aria-labelledby="createVlanModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form id="createVlanForm">
+        <div class="modal-header">
+          <h5 class="modal-title" id="createVlanModalLabel">Create VLAN</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-3">
+            <label for="vlanInterface" class="form-label">Parent Interface</label>
+            <input type="text" class="form-control" id="vlanInterface" name="interface" required>
+          </div>
+          <div class="mb-3">
+            <label for="vlanId" class="form-label">VLAN ID</label>
+            <input type="number" class="form-control" id="vlanId" name="vlan_id" min="1" max="4094" required>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+          <button type="submit" class="btn btn-success">Create VLAN</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Create Bridge Modal -->
+<div class="modal fade" id="createBridgeModal" tabindex="-1" aria-labelledby="createBridgeModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form id="createBridgeForm">
+        <div class="modal-header">
+          <h5 class="modal-title" id="createBridgeModalLabel">Create Network Bridge</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-3">
+            <label for="bridgeName" class="form-label">Bridge Name</label>
+            <input type="text" class="form-control" id="bridgeName" name="bridge_name" required>
+          </div>
+          <div class="mb-3">
+            <label for="bridgeInterfaces" class="form-label">Interfaces (comma separated)</label>
+            <input type="text" class="form-control" id="bridgeInterfaces" name="interfaces" required>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+          <button type="submit" class="btn btn-info">Create Bridge</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Create Team Modal -->
+<div class="modal fade" id="createTeamModal" tabindex="-1" aria-labelledby="createTeamModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form id="createTeamForm">
+        <div class="modal-header">
+          <h5 class="modal-title" id="createTeamModalLabel">Create Team Network</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-3">
+            <label for="teamName" class="form-label">Team Name</label>
+            <input type="text" class="form-control" id="teamName" name="team_name" required>
+          </div>
+          <div class="mb-3">
+            <label for="teamInterfaces" class="form-label">Interfaces (comma separated)</label>
+            <input type="text" class="form-control" id="teamInterfaces" name="interfaces" required>
+          </div>
+          <div class="mb-3">
+            <label for="teamMode" class="form-label">Mode</label>
+            <select class="form-control" id="teamMode" name="mode" required>
+              <option value="activebackup">Active Backup</option>
+              <option value="loadbalance">Load Balance</option>
+              <option value="broadcast">Broadcast</option>
+            </select>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+          <button type="submit" class="btn btn-warning">Create Team</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Edit IP Modal -->
+<div class="modal fade" id="editIpModal" tabindex="-1" aria-labelledby="editIpModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form id="editIpForm">
+        <div class="modal-header">
+          <h5 class="modal-title" id="editIpModalLabel">Edit IP Address</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <input type="hidden" id="editIpPortName" name="port_name">
+          <div class="mb-3">
+            <label for="ipType" class="form-label">IP Type</label>
+            <select class="form-control" id="ipType" name="ip_type" required>
+              <option value="dhcp">DHCP</option>
+              <option value="static">Static</option>
+              <option value="manual">Manual</option>
+            </select>
+          </div>
+          <div class="mb-3 ip-fields" style="display:none;">
+            <label for="ipAddress" class="form-label">IP Address</label>
+            <input type="text" class="form-control" id="ipAddress" name="ip_address">
+          </div>
+          <div class="mb-3 ip-fields" style="display:none;">
+            <label for="ipNetmask" class="form-label">Netmask</label>
+            <input type="text" class="form-control" id="ipNetmask" name="netmask">
+          </div>
+          <div class="mb-3 ip-fields" style="display:none;">
+            <label for="ipGateway" class="form-label">Gateway</label>
+            <input type="text" class="form-control" id="ipGateway" name="gateway">
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+          <button type="submit" class="btn btn-primary">Save IP</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Port Modal -->
+<div class="modal fade" id="editPortModal" tabindex="-1" aria-labelledby="editPortModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form id="editPortForm">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="editPortModalLabel">Edit Interface</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="portName" name="port_name">
+                    <div class="mb-3">
+                        <label for="portSpeed" class="form-label">Speed (Mbps)</label>
+                        <input type="number" class="form-control" id="portSpeed" name="speed" min="10" max="100000">
+                    </div>
+                    <div class="mb-3">
+                        <label for="portDuplex" class="form-label">Duplex</label>
+                        <select class="form-control" id="portDuplex" name="duplex">
+                            <option value="full">Full</option>
+                            <option value="half">Half</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="portMTU" class="form-label">MTU</label>
+                        <input type="number" class="form-control" id="portMTU" name="mtu" min="68" max="9000">
+                    </div>
+                    <div class="mb-3">
+                        <label for="portVLAN" class="form-label">VLAN</label>
+                        <input type="number" class="form-control" id="portVLAN" name="vlan" min="1" max="4094">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Handle port toggle
+    document.querySelectorAll('.toggle-port').forEach(button => {
+        button.addEventListener('click', function() {
+            const portName = this.dataset.portName;
+            const currentStatus = this.dataset.currentStatus;
+            const newStatus = currentStatus === 'up' ? 'down' : 'up';
+        
+            if (confirm(`Are you sure you want to ${newStatus === 'up' ? 'enable' : 'disable'} port ${portName}?`)) {
+                fetch(`/system/ports/${portName}/toggle/`, {
+            method: 'POST',
+            headers: {
+                        'X-CSRFToken': '{{ csrf_token }}',
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                        status: newStatus
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+                    if (data.success) {
+                        window.location.reload();
+                    } else {
+                        alert('Error: ' + data.error);
+            }
+                })
+                .catch(error => {
+                    alert('Error: ' + error);
+        });
+            }
+    });
+
+    // Handle edit button click
+    document.querySelectorAll('[data-bs-target="#editPortModal"]').forEach(button => {
+        button.addEventListener('click', function() {
+            document.getElementById('portName').value = this.dataset.portName;
+            document.getElementById('portSpeed').value = this.dataset.portSpeed;
+            document.getElementById('portDuplex').value = this.dataset.portDuplex;
+            document.getElementById('portMTU').value = this.dataset.portMtu;
+            document.getElementById('portVLAN').value = this.dataset.portVlan;
+        });
+    });
+
+    // Handle edit form submit
+    document.getElementById('editPortForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const portName = document.getElementById('portName').value;
+        const speed = document.getElementById('portSpeed').value;
+        const duplex = document.getElementById('portDuplex').value;
+        const mtu = document.getElementById('portMTU').value;
+        const vlan = document.getElementById('portVLAN').value;
+
+        fetch(`/system/ports/${portName}/edit/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}',
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                speed: speed,
+                duplex: duplex,
+                mtu: mtu,
+                vlan: vlan
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                window.location.reload();
+            } else {
+                alert('Error: ' + data.error);
+            }
+        })
+        .catch(error => {
+            alert('Error: ' + error);
+        });
+    });
+
+    // Handle edit IP button click
+    document.querySelectorAll('.edit-ip-btn').forEach(button => {
+        button.addEventListener('click', function() {
+            document.getElementById('editIpPortName').value = this.dataset.portName;
+            document.getElementById('ipType').value = 'static'; // Default to static
+            document.getElementById('ipAddress').value = this.dataset.portIp;
+            document.getElementById('ipNetmask').value = '';
+            document.getElementById('ipGateway').value = '';
+            document.getElementById('ipType').dispatchEvent(new Event('change')); // Trigger change to show/hide fields
+        });
+    });
+
+    // Handle edit IP form submit
+    document.getElementById('editIpForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const portName = document.getElementById('editIpPortName').value;
+        const ipType = document.getElementById('ipType').value;
+        const ipAddress = document.getElementById('ipAddress').value;
+        const netmask = document.getElementById('ipNetmask').value;
+        const gateway = document.getElementById('ipGateway').value;
+
+        fetch(`/system/ports/${portName}/edit_ip/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}',
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                ip_type: ipType,
+                ip_address: ipAddress,
+                netmask: netmask,
+                gateway: gateway
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                window.location.reload();
+            } else {
+                alert('Error: ' + data.error);
+            }
+        })
+        .catch(error => {
+            alert('Error: ' + error);
+        });
+    });
+
+    // Handle VLAN creation
+    document.getElementById('createVlanForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const interfaceName = document.getElementById('vlanInterface').value;
+        const vlanId = document.getElementById('vlanId').value;
+
+        fetch(`/system/vlans/create/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}',
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                interface: interfaceName,
+                vlan_id: vlanId
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                window.location.reload();
+            } else {
+                alert('Error: ' + data.error);
+            }
+        })
+        .catch(error => {
+            alert('Error: ' + error);
+        });
+    });
+
+    // Handle Bridge creation
+    document.getElementById('createBridgeForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const bridgeName = document.getElementById('bridgeName').value;
+        const interfaces = document.getElementById('bridgeInterfaces').value.split(',').map(i => i.trim());
+
+        fetch(`/system/bridges/create/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}',
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                bridge_name: bridgeName,
+                interfaces: interfaces
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                window.location.reload();
+            } else {
+                alert('Error: ' + data.error);
+            }
+        })
+        .catch(error => {
+            alert('Error: ' + error);
+        });
+    });
+
+    // Handle Team creation
+    document.getElementById('createTeamForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const teamName = document.getElementById('teamName').value;
+        const interfaces = document.getElementById('teamInterfaces').value.split(',').map(i => i.trim());
+        const mode = document.getElementById('teamMode').value;
+
+        fetch(`/system/teams/create/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}',
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                team_name: teamName,
+                interfaces: interfaces,
+                mode: mode
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                window.location.reload();
+            } else {
+                alert('Error: ' + data.error);
+            }
+        })
+        .catch(error => {
+            alert('Error: ' + error);
+        });
+    });
+});
+</script>
+{% endblock %}
+{% endblock %} 

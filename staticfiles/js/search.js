@@ -25,10 +25,10 @@ document.addEventListener('DOMContentLoaded', function() {
             keywords: 'info hardware cpu memory disk'
         },
         { 
-            title: 'LEDs and Ports', 
-            url: '/system/leds_ports/', 
+            title: 'Interfaces', 
+            url: '/system/interfaces/', 
             category: 'System',
-            keywords: 'led port interface network physical'
+            keywords: 'interface port network physical'
         },
         { 
             title: 'Configuration', 

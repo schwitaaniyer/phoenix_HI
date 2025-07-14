@@ -84,3 +84,5 @@ class PacketLossRecord(models.Model):
     
     def __str__(self):
         return f"{self.timestamp} - {self.lte_type} - Loss: {self.packet_loss}%"
+
+# Placeholder for DHCP server model if needed in future

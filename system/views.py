@@ -122,7 +122,7 @@ class SystemInfoView(LoginRequiredMixin, View):
         })
 
 @login_required
-def leds_ports_view(request):
+def interfaces_view(request):
     # Get network interfaces
     try:
         result = subprocess.run(['ip', 'link', 'show'], capture_output=True, text=True)
@@ -185,11 +185,11 @@ def leds_ports_view(request):
                     'vlan': vlan
             })
         
-        return render(request, 'system/leds_ports.html', {
+        return render(request, 'system/interfaces.html', {
             'ports': interfaces
         })
     except Exception as e:
-        return render(request, 'system/leds_ports.html', {
+        return render(request, 'system/interfaces.html', {
             'error': str(e),
             'ports': []
         })
@@ -247,6 +247,102 @@ def edit_port(request, port_name):
         return JsonResponse({'success': False, 'error': f'Failed to update port: {str(e)}'})
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)})
+
+@login_required
+@require_http_methods(["POST"])
+def create_vlan(request):
+    try:
+        data = json.loads(request.body)
+        interface = data.get("interface")
+        vlan_id = data.get("vlan_id")
+        if not interface or not vlan_id:
+            return JsonResponse({"success": False, "error": "Missing interface or VLAN ID"})
+        vlan_name = f"{interface}.{vlan_id}"
+        # Create VLAN interface
+        subprocess.run(["ip", "link", "add", "link", interface, "name", vlan_name, "type", "vlan", "id", str(vlan_id)], check=True)
+        subprocess.run(["ip", "link", "set", vlan_name, "up"], check=True)
+        return JsonResponse({"success": True})
+    except subprocess.CalledProcessError as e:
+        return JsonResponse({"success": False, "error": str(e)})
+    except Exception as e:
+        return JsonResponse({"success": False, "error": str(e)})
+
+@login_required
+@require_http_methods(["POST"])
+def create_bridge(request):
+    try:
+        data = json.loads(request.body)
+        bridge_name = data.get("bridge_name")
+        interfaces = data.get("interfaces", [])
+        if not bridge_name or not interfaces:
+            return JsonResponse({"success": False, "error": "Missing bridge name or interfaces"})
+        # Create bridge
+        subprocess.run(["ip", "link", "add", bridge_name, "type", "bridge"], check=True)
+        for iface in interfaces:
+            subprocess.run(["ip", "link", "set", iface, "master", bridge_name], check=True)
+        subprocess.run(["ip", "link", "set", bridge_name, "up"], check=True)
+        for iface in interfaces:
+            subprocess.run(["ip", "link", "set", iface, "up"], check=True)
+        return JsonResponse({"success": True})
+    except subprocess.CalledProcessError as e:
+        return JsonResponse({"success": False, "error": str(e)})
+    except Exception as e:
+        return JsonResponse({"success": False, "error": str(e)})
+
+@login_required
+@require_http_methods(["POST"])
+def create_team(request):
+    try:
+        data = json.loads(request.body)
+        team_name = data.get("team_name")
+        interfaces = data.get("interfaces", [])
+        mode = data.get("mode", "activebackup")
+        if not team_name or not interfaces:
+            return JsonResponse({"success": False, "error": "Missing team name or interfaces"})
+        # Create team device
+        subprocess.run(["ip", "link", "add", team_name, "type", "team"], check=True)
+        subprocess.run(["ip", "link", "set", team_name, "up"], check=True)
+        # Set mode (requires teamd, simplified for demo)
+        # Add interfaces as team ports
+        for iface in interfaces:
+            subprocess.run(["ip", "link", "set", iface, "down"], check=True)
+            subprocess.run(["ip", "link", "set", iface, "master", team_name], check=True)
+            subprocess.run(["ip", "link", "set", iface, "up"], check=True)
+        return JsonResponse({"success": True})
+    except subprocess.CalledProcessError as e:
+        return JsonResponse({"success": False, "error": str(e)})
+    except Exception as e:
+        return JsonResponse({"success": False, "error": str(e)})
+
+@login_required
+@require_http_methods(["POST"])
+def edit_ip(request, port_name):
+    try:
+        data = json.loads(request.body)
+        ip_type = data.get("ip_type")
+        ip_address = data.get("ip_address")
+        netmask = data.get("netmask")
+        gateway = data.get("gateway")
+        if ip_type == "dhcp":
+            # Set DHCP (using dhclient)
+            subprocess.run(["dhclient", "-r", port_name], check=False)
+            subprocess.run(["dhclient", port_name], check=True)
+        elif ip_type in ["static", "manual"]:
+            if not ip_address or not netmask:
+                return JsonResponse({"success": False, "error": "Missing IP address or netmask"})
+            # Remove any existing IPs
+            subprocess.run(["ip", "addr", "flush", "dev", port_name], check=True)
+            # Add new IP
+            subprocess.run(["ip", "addr", "add", f"{ip_address}/{netmask}", "dev", port_name], check=True)
+            if gateway:
+                subprocess.run(["ip", "route", "add", "default", "via", gateway, "dev", port_name], check=True)
+        else:
+            return JsonResponse({"success": False, "error": "Invalid IP type"})
+        return JsonResponse({"success": True})
+    except subprocess.CalledProcessError as e:
+        return JsonResponse({"success": False, "error": str(e)})
+    except Exception as e:
+        return JsonResponse({"success": False, "error": str(e)})
 
 class ConfigurationView(LoginRequiredMixin, View):
     def get(self, request):
