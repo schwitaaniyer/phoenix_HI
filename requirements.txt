@@ -331,3 +331,6 @@ xdg==5
 xkit==0.0.0
 zipp==1.0.0
 channels>=4.0.0
+
+# For APIViews in api/views.py
+djangorestframework

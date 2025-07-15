@@ -14,4 +14,5 @@ urlpatterns = [
     path('terminal/', include('terminal.urls')),
     path('dashboard/', include('dashboard.urls')),
     path('', include('dashboard.urls')),
+    path('api/', include('api.urls')),
 ]

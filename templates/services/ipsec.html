@@ -4,440 +4,80 @@
 {% block title %}IPSec Configuration{% endblock %}
 
 {% block content %}
-<div class="row">
-    <div class="col-md-6">
-        <div class="card mb-4">
-            <div class="card-header">
-                <h4>IPSec Tunnels</h4>
-            </div>
-            <div class="card-body">
-                <div class="table-responsive">
-                    <table class="table table-striped">
-                        <thead>
-                            <tr>
-                                <th>Name</th>
-                                <th>Status</th>
-                                <th>Local</th>
-                                <th>Remote</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for tunnel in tunnels %}
-                            <tr>
-                                <td>{{ tunnel.name }}</td>
-                                <td>
-                                    <span class="badge bg-{% if tunnel.status == 'up' %}success{% else %}danger{% endif %}">
-                                        {{ tunnel.status }}
-                                    </span>
-                                </td>
-                                <td>{{ tunnel.local_address }}</td>
-                                <td>{{ tunnel.remote_address }}</td>
-                                <td>
-                                    <div class="btn-group btn-group-sm">
-                                        <button class="btn btn-primary" 
-                                                data-bs-toggle="modal" 
-                                                data-bs-target="#editTunnelModal"
-                                                data-tunnel-name="{{ tunnel.name }}"
-                                                data-tunnel-local="{{ tunnel.local_address }}"
-                                                data-tunnel-remote="{{ tunnel.remote_address }}">
-                                            Edit
-                                        </button>
-                                        {% if tunnel.status == 'up' %}
-                                        <button class="btn btn-warning stop-tunnel" data-tunnel-name="{{ tunnel.name }}">Stop</button>
-                                        {% else %}
-                                        <button class="btn btn-success start-tunnel" data-tunnel-name="{{ tunnel.name }}">Start</button>
-                                        {% endif %}
-                                        <button class="btn btn-danger delete-tunnel" data-tunnel-name="{{ tunnel.name }}">Delete</button>
-                                    </div>
-                                </td>
-                            </tr>
-                            {% empty %}
-                            <tr>
-                                <td colspan="5" class="text-center">No IPSec tunnels configured</td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
+<div id="ipsec-content">
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h4>IPSec Service Control</h4>
                 </div>
-                <button class="btn btn-primary mt-3" data-bs-toggle="modal" data-bs-target="#newTunnelModal">
-                    Add New Tunnel
-                </button>
-            </div>
-        </div>
-    </div>
-    
-    <div class="col-md-6">
-        <div class="card mb-4">
-            <div class="card-header">
-                <h4>IPSec Status</h4>
-            </div>
-            <div class="card-body">
-                <pre>{{ status }}</pre>
-                <div class="btn-group">
-                    <button class="btn btn-sm btn-primary" id="restartIpsec">Restart IPSec</button>
-                    <button class="btn btn-sm btn-warning" id="reloadIpsec">Reload Config</button>
-                    <button class="btn btn-sm btn-danger" id="stopIpsec">Stop IPSec</button>
-                </div>
-            </div>
-        </div>
-        
-        <div class="card">
-            <div class="card-header">
-                <h4>IPSec Logs</h4>
-            </div>
-            <div class="card-body">
-                <div class="table-responsive">
-                    <table class="table table-striped">
-                        <thead>
-                            <tr>
-                                <th>Timestamp</th>
-                                <th>Message</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for log in logs %}
-                            <tr>
-                                <td>{{ log.timestamp }}</td>
-                                <td>{{ log.message }}</td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- New Tunnel Modal -->
-<div class="modal fade" id="newTunnelModal" tabindex="-1" aria-labelledby="newTunnelModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="newTunnelModalLabel">Add New IPSec Tunnel</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <form id="newTunnelForm" method="post">
-                <div class="modal-body">
-                    {% csrf_token %}
-                    <input type="hidden" name="form_type" value="new_tunnel">
-                    
-                    <div class="row">
-                        <div class="col-md-6">
-                            {{ tunnel_form.name|as_crispy_field }}
-                            {{ tunnel_form.local|as_crispy_field }}
-                            {{ tunnel_form.remote|as_crispy_field }}
-                            {{ tunnel_form.ike_version|as_crispy_field }}
-                            {{ tunnel_form.authentication_method|as_crispy_field }}
-                            
-                            <div class="psk-fields">
-                                {{ tunnel_form.preshared|as_crispy_field }}
-                                <button type="button" class="btn btn-secondary btn-sm" id="generatePsk">Generate PSK</button>
-                            </div>
-                            
-                            <div class="certificate-fields" style="display: none;">
-                                <div class="mb-3">
-                                    <label for="my_certificate">My Certificate</label>
-                                    <input type="file" class="form-control" id="my_certificate" name="my_certificate">
-                                </div>
-                                <div class="mb-3">
-                                    <label for="myca_certificate">CA Certificate</label>
-                                    <input type="file" class="form-control" id="myca_certificate" name="myca_certificate">
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="col-md-6">
-                            <div class="card mb-3">
-                                <div class="card-header">
-                                    <h6 class="mb-0">Encryption Settings</h6>
-                                </div>
-                                <div class="card-body">
-                                    {{ tunnel_form.encryption_algorithm|as_crispy_field }}
-                                    {{ tunnel_form.key_length|as_crispy_field }}
-                                    {{ tunnel_form.hash_algo|as_crispy_field }}
-                                    {{ tunnel_form.dh_group|as_crispy_field }}
-                                </div>
-                            </div>
-                            
-                            <div class="card">
-                                <div class="card-header">
-                                    <h6 class="mb-0">Traffic Selectors</h6>
-                                </div>
-                                <div class="card-body">
-                                    {{ tunnel_form.local_ts|as_crispy_field }}
-                                    {{ tunnel_form.remote_ts|as_crispy_field }}
-                                </div>
-                            </div>
-                        </div>
+                <div class="card-body">
+                    <div class="btn-group w-100">
+                        <button class="btn btn-primary" id="startIpsec">Start IPSec</button>
+                        <button class="btn btn-warning" id="restartIpsec">Restart IPSec</button>
+                        <button class="btn btn-danger" id="stopIpsec">Stop IPSec</button>
+                        <button class="btn btn-secondary" id="reloadIpsec">Reload Config</button>
+                    </div>
+                    <div class="mt-3">
+                        <h5>Service Status</h5>
+                        <pre id="ipsecStatus">Loading...</pre>
                     </div>
                 </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                    <button type="submit" class="btn btn-primary">Save Tunnel</button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
-
-<!-- Edit Tunnel Modal -->
-<div class="modal fade" id="editTunnelModal" tabindex="-1" aria-labelledby="editTunnelModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="editTunnelModalLabel">Edit IPSec Tunnel</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <form id="editTunnelForm" method="post">
-                <div class="modal-body">
-                    {% csrf_token %}
-                    <input type="hidden" name="form_type" value="edit_tunnel">
-                    <input type="hidden" id="editTunnelName" name="original_name">
-                    
-                    <div class="row">
-                        <div class="col-md-6">
-                            {{ tunnel_form.name|as_crispy_field }}
-                            {{ tunnel_form.local|as_crispy_field }}
-                            {{ tunnel_form.remote|as_crispy_field }}
-                            {{ tunnel_form.ike_version|as_crispy_field }}
-                            {{ tunnel_form.authentication_method|as_crispy_field }}
-                            
-                            <div class="psk-fields">
-                                {{ tunnel_form.preshared|as_crispy_field }}
-                                <button type="button" class="btn btn-secondary btn-sm" id="generatePskEdit">Generate PSK</button>
-                            </div>
-                            
-                            <div class="certificate-fields" style="display: none;">
-                                <div class="mb-3">
-                                    <label for="my_certificate_edit">My Certificate</label>
-                                    <input type="file" class="form-control" id="my_certificate_edit" name="my_certificate">
-                                </div>
-                                <div class="mb-3">
-                                    <label for="myca_certificate_edit">CA Certificate</label>
-                                    <input type="file" class="form-control" id="myca_certificate_edit" name="myca_certificate">
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="col-md-6">
-                            <div class="card mb-3">
-                                <div class="card-header">
-                                    <h6 class="mb-0">Encryption Settings</h6>
-                                </div>
-                                <div class="card-body">
-                                    {{ tunnel_form.encryption_algorithm|as_crispy_field }}
-                                    {{ tunnel_form.key_length|as_crispy_field }}
-                                    {{ tunnel_form.hash_algo|as_crispy_field }}
-                                    {{ tunnel_form.dh_group|as_crispy_field }}
-                                </div>
-                            </div>
-                            
-                            <div class="card">
-                                <div class="card-header">
-                                    <h6 class="mb-0">Traffic Selectors</h6>
-                                </div>
-                                <div class="card-body">
-                                    {{ tunnel_form.local_ts|as_crispy_field }}
-                                    {{ tunnel_form.remote_ts|as_crispy_field }}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                    <button type="submit" class="btn btn-primary">Update Tunnel</button>
-                </div>
-            </form>
         </div>
     </div>
 </div>
+<div id="not-authorized" style="display:none;">{% include 'not_authorized.html' %}</div>
+{% endblock %}
 
 {% block extra_js %}
 <script>
-// Tunnel operations
-document.querySelectorAll('.start-tunnel').forEach(button => {
-    button.addEventListener('click', function() {
-        const tunnelName = this.dataset.tunnelName;
-        fetch(`/services/ipsec/tunnel/${tunnelName}/start/`, {
-            method: 'POST',
-            headers: {
-                'X-CSRFToken': '{{ csrf_token }}',
-            }
-        })
-        .then(response => response.json())
+function loadIpsecStatus() {
+    fetch('/api/services/ipsec/status/')
+        .then(r => r.json())
         .then(data => {
-            if (data.success) {
-                alert('Tunnel started successfully');
-                location.reload();
-            } else {
-                alert('Error starting tunnel: ' + data.error);
-            }
-        });
-    });
-});
-
-document.querySelectorAll('.stop-tunnel').forEach(button => {
-    button.addEventListener('click', function() {
-        const tunnelName = this.dataset.tunnelName;
-        fetch(`/services/ipsec/tunnel/${tunnelName}/stop/`, {
-            method: 'POST',
-            headers: {
-                'X-CSRFToken': '{{ csrf_token }}',
-            }
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                alert('Tunnel stopped successfully');
-                location.reload();
-            } else {
-                alert('Error stopping tunnel: ' + data.error);
-            }
-        });
-    });
-});
-
-document.querySelectorAll('.delete-tunnel').forEach(button => {
-    button.addEventListener('click', function() {
-        const tunnelName = this.dataset.tunnelName;
-        if (confirm('Are you sure you want to delete this tunnel?')) {
-            fetch(`/services/ipsec/tunnel/${tunnelName}/delete/`, {
-                method: 'POST',
-                headers: {
-                    'X-CSRFToken': '{{ csrf_token }}',
-                }
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    alert('Tunnel deleted successfully');
-                    location.reload();
+            if (data.status) {
+                document.getElementById('ipsecStatus').textContent = data.status;
+            } else if (data.error) {
+                if (data.error.includes('403')) {
+                    document.getElementById('ipsec-content').style.display = 'none';
+                    document.getElementById('not-authorized').style.display = '';
                 } else {
-                    alert('Error deleting tunnel: ' + data.error);
+                    document.getElementById('ipsecStatus').textContent = data.error;
                 }
-            });
-        }
-    });
-});
-
-// IPSec service operations
-document.getElementById('restartIpsec').addEventListener('click', function() {
-    if (confirm('Are you sure you want to restart IPSec service?')) {
-        fetch('/services/ipsec/restart/', {
-            method: 'POST',
-            headers: {
-                'X-CSRFToken': '{{ csrf_token }}',
-            }
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                alert('IPSec service restarted successfully');
-                location.reload();
-            } else {
-                alert('Error restarting IPSec: ' + data.error);
             }
         });
-    }
-});
-
-document.getElementById('reloadIpsec').addEventListener('click', function() {
-    if (confirm('Are you sure you want to reload IPSec configuration?')) {
-        fetch('/services/ipsec/reload/', {
-            method: 'POST',
-            headers: {
-                'X-CSRFToken': '{{ csrf_token }}',
-            }
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                alert('IPSec configuration reloaded successfully');
-                location.reload();
-            } else {
-                alert('Error reloading IPSec: ' + data.error);
-            }
-        });
-    }
-});
-
-document.getElementById('stopIpsec').addEventListener('click', function() {
-    if (confirm('Are you sure you want to stop IPSec service?')) {
-        fetch('/services/ipsec/stop/', {
-            method: 'POST',
-            headers: {
-                'X-CSRFToken': '{{ csrf_token }}',
-            }
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                alert('IPSec service stopped successfully');
-                location.reload();
-            } else {
-                alert('Error stopping IPSec: ' + data.error);
-            }
-        });
-    }
-});
-
-// Edit tunnel modal setup
-document.getElementById('editTunnelModal').addEventListener('show.bs.modal', function(event) {
-    const button = event.relatedTarget;
-    const modal = this;
-    
-    modal.querySelector('#editTunnelName').value = button.dataset.tunnelName;
-    modal.querySelector('#id_name').value = button.dataset.tunnelName;
-    modal.querySelector('#id_local').value = button.dataset.tunnelLocal;
-    modal.querySelector('#id_remote').value = button.dataset.tunnelRemote;
-});
-
-// Authentication method toggle
-function toggleAuthFields(select) {
-    const pskFields = select.closest('form').querySelector('.psk-fields');
-    const certFields = select.closest('form').querySelector('.certificate-fields');
-    
-    if (select.value === 'Mutual PSK') {
-        pskFields.style.display = 'block';
-        certFields.style.display = 'none';
-    } else {
-        pskFields.style.display = 'none';
-        certFields.style.display = 'block';
-    }
 }
-
-document.querySelectorAll('[name="authentication_method"]').forEach(select => {
-    select.addEventListener('change', function() {
-        toggleAuthFields(this);
+document.addEventListener('DOMContentLoaded', function() {
+    loadIpsecStatus();
+    document.getElementById('startIpsec').addEventListener('click', function() {
+        fetch('/api/services/ipsec/control/', {
+            method: 'POST',
+            headers: {'X-CSRFToken': '{{ csrf_token }}'},
+            body: new URLSearchParams({action: 'start'})
+        }).then(() => loadIpsecStatus());
     });
-});
-
-// PSK Generation
-function generatePsk(pskField) {
-    fetch('/services/ipsec/generate-psk/', {
-        method: 'POST',
-        headers: {
-            'X-CSRFToken': '{{ csrf_token }}',
-        }
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.psk) {
-            pskField.value = data.psk;
-        }
+    document.getElementById('restartIpsec').addEventListener('click', function() {
+        fetch('/api/services/ipsec/control/', {
+            method: 'POST',
+            headers: {'X-CSRFToken': '{{ csrf_token }}'},
+            body: new URLSearchParams({action: 'restart'})
+        }).then(() => loadIpsecStatus());
     });
-}
-
-document.getElementById('generatePsk').addEventListener('click', function() {
-    generatePsk(document.querySelector('#newTunnelForm [name="preshared"]'));
-});
-
-document.getElementById('generatePskEdit').addEventListener('click', function() {
-    generatePsk(document.querySelector('#editTunnelForm [name="preshared"]'));
+    document.getElementById('stopIpsec').addEventListener('click', function() {
+        fetch('/api/services/ipsec/control/', {
+            method: 'POST',
+            headers: {'X-CSRFToken': '{{ csrf_token }}'},
+            body: new URLSearchParams({action: 'stop'})
+        }).then(() => loadIpsecStatus());
+    });
+    document.getElementById('reloadIpsec').addEventListener('click', function() {
+        fetch('/api/services/ipsec/control/', {
+            method: 'POST',
+            headers: {'X-CSRFToken': '{{ csrf_token }}'},
+            body: new URLSearchParams({action: 'reload'})
+        }).then(() => loadIpsecStatus());
+    });
 });
 </script>
-{% endblock %}
 {% endblock %}

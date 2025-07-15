@@ -50,6 +50,7 @@ INSTALLED_APPS = [
     'crispy_forms',
     'crispy_bootstrap5',
     'channels',
+    'api',
 ]
 
 MIDDLEWARE = [
@@ -147,3 +148,27 @@ CRISPY_TEMPLATE_PACK = "bootstrap5"
 LOGIN_URL = 'login:login'
 LOGIN_REDIRECT_URL = 'dashboard:index'
 LOGOUT_REDIRECT_URL = 'login:login'
+
+AUTHENTICATION_BACKENDS = [
+    'api.auth_backends.LocalBackend',
+    # 'api.auth_backends.LDAPBackend',
+    # 'api.auth_backends.TACACSBackend',
+    # 'api.auth_backends.RADIUSBackend',
+    'django.contrib.auth.backends.ModelBackend',
+]
+
+# LDAP, TACACS+, RADIUS config placeholders
+LDAP_CONFIG = {
+    'SERVER_URI': 'ldap://localhost',
+    'BASE_DN': 'dc=example,dc=com',
+    'USER_DN_TEMPLATE': 'uid={username},ou=users,dc=example,dc=com',
+}
+TACACS_CONFIG = {
+    'SERVER': 'localhost',
+    'PORT': 49,
+    'SECRET': 'changeme',
+}
+RADIUS_CONFIG = {
+    'SERVER': 'localhost',
+    'SECRET': 'changeme',
+}

@@ -13,69 +13,27 @@
             <div class="col-md-6">
                 <form method="get">
                     <div class="input-group">
-                        <input type="text" class="form-control" name="search" placeholder="Search logs...">
-                        <button class="btn btn-primary" type="submit">Search</button>
+                        <input type="text" class="form-control" id="logSearch" placeholder="Search logs...">
+                        <button class="btn btn-primary" type="button" id="searchLogs">Search</button>
                     </div>
                 </form>
             </div>
             <div class="col-md-6 text-end">
-                <a href="?download=1" class="btn btn-secondary">Download Logs</a>
                 <button class="btn btn-danger" id="clearLogs">Clear Logs</button>
             </div>
         </div>
-        
         <div class="table-responsive">
             <table class="table table-striped">
                 <thead>
                     <tr>
-                        <th>Timestamp</th>
-                        <th>Severity</th>
-                        <th>Source</th>
-                        <th>Message</th>
+                        <th>Log Entry</th>
                     </tr>
                 </thead>
-                <tbody>
-                    {% for log in logs %}
-                    <tr>
-                        <td>{{ log.timestamp }}</td>
-                        <td>
-                            <span class="badge bg-{% if log.severity == 'error' %}danger{% elif log.severity == 'warning' %}warning{% else %}info{% endif %}">
-                                {{ log.severity }}
-                            </span>
-                        </td>
-                        <td>{{ log.source }}</td>
-                        <td>{{ log.message }}</td>
-                    </tr>
-                    {% endfor %}
+                <tbody id="logs-tbody">
+                    <tr><td>Loading...</td></tr>
                 </tbody>
             </table>
         </div>
-        
-        <nav aria-label="Log pagination">
-            <ul class="pagination justify-content-center">
-                {% if logs.has_previous %}
-                <li class="page-item">
-                    <a class="page-link" href="?page={{ logs.previous_page_number }}" aria-label="Previous">
-                        <span aria-hidden="true">&laquo;</span>
-                    </a>
-                </li>
-                {% endif %}
-                
-                {% for num in logs.paginator.page_range %}
-                <li class="page-item {% if num == logs.number %}active{% endif %}">
-                    <a class="page-link" href="?page={{ num }}">{{ num }}</a>
-                </li>
-                {% endfor %}
-                
-                {% if logs.has_next %}
-                <li class="page-item">
-                    <a class="page-link" href="?page={{ logs.next_page_number }}" aria-label="Next">
-                        <span aria-hidden="true">&raquo;</span>
-                    </a>
-                </li>
-                {% endif %}
-            </ul>
-        </nav>
     </div>
 </div>
 
@@ -92,70 +50,80 @@
                         <th>User</th>
                         <th>CPU %</th>
                         <th>Memory %</th>
-                        <th>Command</th>
-                        <th>Actions</th>
+                        <th>Name</th>
                     </tr>
                 </thead>
-                <tbody>
-                    {% for process in processes %}
-                    <tr>
-                        <td>{{ process.pid }}</td>
-                        <td>{{ process.user }}</td>
-                        <td>{{ process.cpu }}</td>
-                        <td>{{ process.memory }}</td>
-                        <td>{{ process.command|truncatechars:50 }}</td>
-                        <td>
-                            <button class="btn btn-sm btn-danger" onclick="killProcess({{ process.pid }})">Kill</button>
-                        </td>
-                    </tr>
-                    {% endfor %}
+                <tbody id="processes-tbody">
+                    <tr><td colspan="5">Loading...</td></tr>
                 </tbody>
             </table>
         </div>
     </div>
 </div>
+{% endblock %}
 
 {% block extra_js %}
 <script>
-function killProcess(pid) {
-    if (confirm('Are you sure you want to kill process ' + pid + '?')) {
-        fetch(`/system/kill-process/${pid}/`, {
-            method: 'POST',
-            headers: {
-                'X-CSRFToken': '{{ csrf_token }}',
-            }
-        })
+function loadLogs() {
+    fetch('/api/logs/')
         .then(response => response.json())
         .then(data => {
-            if (data.success) {
-                alert('Process killed successfully');
-                location.reload();
-            } else {
-                alert('Error killing process: ' + data.error);
+            const tbody = document.getElementById('logs-tbody');
+            tbody.innerHTML = '';
+            (data.logs || []).forEach(log => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `<td>${log}</td>`;
+                tbody.appendChild(tr);
+            });
+            if (!data.logs || data.logs.length === 0) {
+                tbody.innerHTML = '<tr><td>No logs found.</td></tr>';
             }
         });
-    }
 }
-
-document.getElementById('clearLogs').addEventListener('click', function() {
-    if (confirm('Are you sure you want to clear all logs?')) {
-        fetch('/system/clear-logs/', {
-            method: 'POST',
-            headers: {
-                'X-CSRFToken': '{{ csrf_token }}',
-            }
-        })
+function loadProcesses() {
+    fetch('/api/processes/')
         .then(response => response.json())
         .then(data => {
-            if (data.success) {
-                alert('Logs cleared successfully');
-                location.reload();
-            } else {
-                alert('Error clearing logs: ' + data.error);
+            const tbody = document.getElementById('processes-tbody');
+            tbody.innerHTML = '';
+            (data.processes || []).forEach(proc => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${proc.pid}</td>
+                    <td>${proc.username}</td>
+                    <td>${proc.cpu_percent}</td>
+                    <td>${proc.memory_percent.toFixed(2)}</td>
+                    <td>${proc.name}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+            if (!data.processes || data.processes.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5">No processes found.</td></tr>';
             }
         });
-    }
+}
+document.addEventListener('DOMContentLoaded', function() {
+    loadLogs();
+    loadProcesses();
+    document.getElementById('clearLogs').addEventListener('click', function() {
+        if (confirm('Are you sure you want to clear all logs?')) {
+            fetch('/system/clear-logs/', {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}',
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Logs cleared successfully');
+                    loadLogs();
+                } else {
+                    alert('Error clearing logs: ' + data.error);
+                }
+            });
+        }
+    });
 });
 </script>
-{% endblock %}
 {% endblock %}

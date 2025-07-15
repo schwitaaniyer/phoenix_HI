@@ -4,241 +4,168 @@
 {% block title %}Authentication Configuration{% endblock %}
 
 {% block content %}
-<div class="row">
-    <div class="col-md-6">
-        <div class="card mb-4">
-            <div class="card-header">
-                <h4>Authentication Method</h4>
-            </div>
-            <div class="card-body">
-                <form method="post">
-                    {% csrf_token %}
-                    <input type="hidden" name="form_type" value="auth_method">
-                    {{ method_form|crispy }}
-                    <button type="submit" class="btn btn-primary">Save Method</button>
-                </form>
-            </div>
-        </div>
-        
-        <div class="card">
-            <div class="card-header">
-                <h4>Local Users</h4>
-            </div>
-            <div class="card-body">
-                <div class="table-responsive">
-                    <table class="table table-striped">
-                        <thead>
-                            <tr>
-                                <th>Username</th>
-                                <th>Role</th>
-                                <th>Last Login</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for user in local_users %}
-                            <tr>
-                                <td>{{ user.username }}</td>
-                                <td>{{ user.role }}</td>
-                                <td>{{ user.last_login|default:"Never" }}</td>
-                                <td>
-                                    <div class="btn-group btn-group-sm">
-                                        <button class="btn btn-primary" 
-                                                data-bs-toggle="modal" 
-                                                data-bs-target="#editUserModal"
-                                                data-user-id="{{ user.id }}"
-                                                data-user-username="{{ user.username }}"
-                                                data-user-role="{{ user.role }}">
-                                            Edit
-                                        </button>
-                                        <button class="btn btn-danger delete-user" data-user-id="{{ user.id }}">Delete</button>
-                                    </div>
-                                </td>
-                            </tr>
-                            {% empty %}
-                            <tr>
-                                <td colspan="4" class="text-center">No local users configured</td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
+<div id="auth-content">
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h4>Authentication Method</h4>
                 </div>
-                <button class="btn btn-primary mt-3" data-bs-toggle="modal" data-bs-target="#newUserModal">
-                    Add New User
-                </button>
+                <div class="card-body">
+                    <form id="authMethodForm">
+                        <div class="mb-3">
+                            <label for="authMethod" class="form-label">Select Method</label>
+                            <select class="form-select" id="authMethod" name="method">
+                                <option value="local">Local</option>
+                                <option value="ldap">LDAP</option>
+                                <option value="tacacs">TACACS+</option>
+                                <option value="radius">RADIUS</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Save Method</button>
+                    </form>
+                </div>
+            </div>
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h4>User Privileges</h4>
+                </div>
+                <div class="card-body">
+                    <div id="userPrivilegeTable"></div>
+                </div>
             </div>
         </div>
-    </div>
-    
-    <div class="col-md-6">
-        {% if current_method == 'ldap' %}
-        <div class="card mb-4">
-            <div class="card-header">
-                <h4>LDAP Configuration</h4>
+        <div class="col-md-6">
+            <div class="card mb-4" id="ldapConfigCard" style="display:none;">
+                <div class="card-header"><h4>LDAP Configuration</h4></div>
+                <div class="card-body">
+                    <form id="ldapConfigForm">
+                        <div class="mb-3"><label>Server URI</label><input type="text" class="form-control" name="server_uri"></div>
+                        <div class="mb-3"><label>Base DN</label><input type="text" class="form-control" name="base_dn"></div>
+                        <div class="mb-3"><label>User DN Template</label><input type="text" class="form-control" name="user_dn_template"></div>
+                        <button type="submit" class="btn btn-primary">Save LDAP Config</button>
+                    </form>
+                </div>
             </div>
-            <div class="card-body">
-                <form method="post">
-                    {% csrf_token %}
-                    <input type="hidden" name="form_type" value="ldap_config">
-                    {{ ldap_form|crispy }}
-                    <button type="submit" class="btn btn-primary">Save LDAP Configuration</button>
-                </form>
+            <div class="card mb-4" id="tacacsConfigCard" style="display:none;">
+                <div class="card-header"><h4>TACACS+ Configuration</h4></div>
+                <div class="card-body">
+                    <form id="tacacsConfigForm">
+                        <div class="mb-3"><label>Server</label><input type="text" class="form-control" name="server"></div>
+                        <div class="mb-3"><label>Port</label><input type="number" class="form-control" name="port"></div>
+                        <div class="mb-3"><label>Secret</label><input type="password" class="form-control" name="secret"></div>
+                        <button type="submit" class="btn btn-primary">Save TACACS+ Config</button>
+                    </form>
+                </div>
             </div>
-        </div>
-        {% elif current_method == 'tacacs' %}
-        <div class="card mb-4">
-            <div class="card-header">
-                <h4>TACACS+ Configuration</h4>
-            </div>
-            <div class="card-body">
-                <form method="post">
-                    {% csrf_token %}
-                    <input type="hidden" name="form_type" value="tacacs_config">
-                    {{ tacacs_form|crispy }}
-                    <button type="submit" class="btn btn-primary">Save TACACS+ Configuration</button>
-                </form>
-            </div>
-        </div>
-        {% elif current_method == 'radius' %}
-        <div class="card mb-4">
-            <div class="card-header">
-                <h4>RADIUS Configuration</h4>
-            </div>
-            <div class="card-body">
-                <form method="post">
-                    {% csrf_token %}
-                    <input type="hidden" name="form_type" value="radius_config">
-                    {{ radius_form|crispy }}
-                    <button type="submit" class="btn btn-primary">Save RADIUS Configuration</button>
-                </form>
-            </div>
-        </div>
-        {% endif %}
-        
-        <div class="card">
-            <div class="card-header">
-                <h4>Authentication Logs</h4>
-            </div>
-            <div class="card-body">
-                <div class="table-responsive">
-                    <table class="table table-striped">
-                        <thead>
-                            <tr>
-                                <th>Timestamp</th>
-                                <th>User</th>
-                                <th>Method</th>
-                                <th>Status</th>
-                                <th>IP Address</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for log in auth_logs %}
-                            <tr>
-                                <td>{{ log.timestamp }}</td>
-                                <td>{{ log.user|default:"-" }}</td>
-                                <td>{{ log.method }}</td>
-                                <td>
-                                    <span class="badge bg-{% if log.status == 'success' %}success{% else %}danger{% endif %}">
-                                        {{ log.status }}
-                                    </span>
-                                </td>
-                                <td>{{ log.ip }}</td>
-                            </tr>
-                            {% empty %}
-                            <tr>
-                                <td colspan="5" class="text-center">No authentication logs available</td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
+            <div class="card mb-4" id="radiusConfigCard" style="display:none;">
+                <div class="card-header"><h4>RADIUS Configuration</h4></div>
+                <div class="card-body">
+                    <form id="radiusConfigForm">
+                        <div class="mb-3"><label>Server</label><input type="text" class="form-control" name="server"></div>
+                        <div class="mb-3"><label>Secret</label><input type="password" class="form-control" name="secret"></div>
+                        <button type="submit" class="btn btn-primary">Save RADIUS Config</button>
+                    </form>
                 </div>
             </div>
         </div>
     </div>
 </div>
-
-<!-- New User Modal -->
-<div class="modal fade" id="newUserModal" tabindex="-1" aria-labelledby="newUserModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="newUserModalLabel">Add New Local User</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <form id="newUserForm" method="post">
-                <div class="modal-body">
-                    {% csrf_token %}
-                    <input type="hidden" name="form_type" value="new_user">
-                    {{ user_form|crispy }}
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                    <button type="submit" class="btn btn-primary">Create User</button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
-
-<!-- Edit User Modal -->
-<div class="modal fade" id="editUserModal" tabindex="-1" aria-labelledby="editUserModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="editUserModalLabel">Edit Local User</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <form id="editUserForm" method="post">
-                <div class="modal-body">
-                    {% csrf_token %}
-                    <input type="hidden" name="form_type" value="edit_user">
-                    <input type="hidden" id="editUserId" name="user_id">
-                    {{ user_form|crispy }}
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                    <button type="submit" class="btn btn-primary">Update User</button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
+<div id="not-authorized" style="display:none;">{% include 'not_authorized.html' %}</div>
+{% endblock %}
 
 {% block extra_js %}
 <script>
-// User operations
-document.querySelectorAll('.delete-user').forEach(button => {
-    button.addEventListener('click', function() {
-        const userId = this.dataset.userId;
-        if (confirm('Are you sure you want to delete this user?')) {
-            fetch(`/services/authentication/user/${userId}/delete/`, {
-                method: 'POST',
-                headers: {
-                    'X-CSRFToken': '{{ csrf_token }}',
-                }
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    alert('User deleted successfully');
-                    location.reload();
-                } else {
-                    alert('Error deleting user: ' + data.error);
-                }
-            });
-        }
+function showConfigCard(method) {
+    document.getElementById('ldapConfigCard').style.display = (method === 'ldap') ? '' : 'none';
+    document.getElementById('tacacsConfigCard').style.display = (method === 'tacacs') ? '' : 'none';
+    document.getElementById('radiusConfigCard').style.display = (method === 'radius') ? '' : 'none';
+}
+function loadAuthConfig() {
+    // Always show the authentication page for local users (development mode)
+    document.getElementById('auth-content').style.display = '';
+    document.getElementById('not-authorized').style.display = 'none';
+}
+document.addEventListener('DOMContentLoaded', function() {
+    // Set method selection and config cards
+    document.getElementById('authMethodForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const method = document.getElementById('authMethod').value;
+        fetch('/api/auth/set_method/', {
+            method: 'POST',
+            headers: {'X-CSRFToken': '{{ csrf_token }}'},
+            body: new URLSearchParams({method})
+        }).then(r => r.json()).then(data => {
+            if (data.success) {
+                showConfigCard(method);
+            }
+        });
     });
-});
-
-// Edit user modal setup
-document.getElementById('editUserModal').addEventListener('show.bs.modal', function(event) {
-    const button = event.relatedTarget;
-    const modal = this;
-    
-    modal.querySelector('#editUserId').value = button.dataset.userId;
-    modal.querySelector('#id_username').value = button.dataset.userUsername;
-    modal.querySelector('#id_role').value = button.dataset.userRole;
+    document.getElementById('authMethod').addEventListener('change', function() {
+        showConfigCard(this.value);
+    });
+    // LDAP config
+    document.getElementById('ldapConfigForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        fetch('/api/auth/set_ldap/', {
+            method: 'POST',
+            headers: {'X-CSRFToken': '{{ csrf_token }}'},
+            body: new FormData(this)
+        }).then(r => r.json()).then(data => {
+            if (data.success) alert('LDAP config saved');
+        });
+    });
+    // TACACS config
+    document.getElementById('tacacsConfigForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        fetch('/api/auth/set_tacacs/', {
+            method: 'POST',
+            headers: {'X-CSRFToken': '{{ csrf_token }}'},
+            body: new FormData(this)
+        }).then(r => r.json()).then(data => {
+            if (data.success) alert('TACACS+ config saved');
+        });
+    });
+    // RADIUS config
+    document.getElementById('radiusConfigForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        fetch('/api/auth/set_radius/', {
+            method: 'POST',
+            headers: {'X-CSRFToken': '{{ csrf_token }}'},
+            body: new FormData(this)
+        }).then(r => r.json()).then(data => {
+            if (data.success) alert('RADIUS config saved');
+        });
+    });
+    // Load user privilege table
+    fetch('/api/auth/users/').then(r => r.json()).then(data => {
+        fetch('/api/auth/privilege_levels/').then(r2 => r2.json()).then(levelsData => {
+            let html = '<table class="table table-striped"><thead><tr><th>User</th><th>Email</th><th>Privilege</th></tr></thead><tbody>';
+            data.users.forEach(user => {
+                html += `<tr><td>${user.username}</td><td>${user.email}</td><td><select data-user-id="${user.id}" class="privilege-select">`;
+                levelsData.levels.forEach(level => {
+                    html += `<option value="${level.id}">${level.level}: ${level.name}</option>`;
+                });
+                html += '</select></td></tr>';
+            });
+            html += '</tbody></table>';
+            document.getElementById('userPrivilegeTable').innerHTML = html;
+            document.querySelectorAll('.privilege-select').forEach(sel => {
+                sel.addEventListener('change', function() {
+                    fetch('/api/auth/set_user_privilege/', {
+                        method: 'POST',
+                        headers: {'X-CSRFToken': '{{ csrf_token }}'},
+                        body: new URLSearchParams({user_id: this.dataset.userId, level_id: this.value})
+                    }).then(r => r.json()).then(data => {
+                        if (data.success) alert('Privilege updated');
+                    });
+                });
+            });
+        });
+    });
+    // Initial config card state
+    showConfigCard(document.getElementById('authMethod').value);
+    loadAuthConfig();
 });
 </script>
-{% endblock %}
 {% endblock %}

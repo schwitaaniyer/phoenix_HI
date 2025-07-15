@@ -24,6 +24,13 @@ class LoginView(View):
                 
                 if user is not None:
                     login(request, user)
+                    # Ensure max privilege for local (development) users
+                    from api.models import UserProfile, PrivilegeLevel
+                    profile, _ = UserProfile.objects.get_or_create(user=user)
+                    max_priv = PrivilegeLevel.objects.order_by('level').first()
+                    if max_priv and (not profile.privilege_level or profile.privilege_level.level != max_priv.level):
+                        profile.privilege_level = max_priv
+                        profile.save()
                     messages.success(request, f'Welcome back, {email}!')
                     return redirect('dashboard:index')
                 else:
