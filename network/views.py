@@ -167,10 +167,10 @@ class RoutingView(LoginRequiredMixin, View):
     def get_mesh_status(self):
         try:
             nhrp = subprocess.run(['ip', 'nhrp', 'show'], capture_output=True, text=True)
-            return f"NHRP Status:\n{nhrp.stdout}"
+            return f"Mesh Status:\n{nhrp.stdout}"
         except Exception as e:
             print(f"Error getting mesh status: {e}")
-            return "Error retrieving NHRP status"
+            return "Error retrieving Mesh status"
 
     def get(self, request):
         active_tab = request.GET.get('tab', 'basic')
@@ -261,9 +261,9 @@ class RoutingView(LoginRequiredMixin, View):
                 secret = request.POST.get('secret')
                 holding_time = request.POST.get('holding_time', '300')
                 if all([interface, hub, secret]):
-                    # Configure NHRP
+                    # Configure Mesh
                     subprocess.run(['ip', 'nhrp', 'add', interface, hub, 'register', 'holding-time', holding_time], check=True)
-                    messages.success(request, f'NHRP configured for {interface}')
+                    messages.success(request, f'Mesh configured for {interface}')
 
             elif action == 'configure_frr':
                 primary = request.POST.get('primary_path')

@@ -26,7 +26,7 @@
             </li>
             <li class="nav-item">
                 <a class="nav-link {% if active_tab == 'mesh' %}active{% endif %}" 
-                       href="#mesh" data-bs-toggle="tab" role="tab">NHRP Mesh</a>
+                       href="#mesh" data-bs-toggle="tab" role="tab">Mesh</a>
             </li>
         </ul>
 
@@ -354,13 +354,13 @@
             </div>
         </div>
         
-                <!-- NHRP Mesh Tab -->
+                <!-- Mesh Tab -->
                 <div class="tab-pane fade {% if active_tab == 'mesh' %}show active{% endif %}" id="mesh" role="tabpanel">
                     <div class="row mb-4">
                         <div class="col-12">
         <div class="card">
             <div class="card-header">
-                                    <h5 class="mb-0">NHRP Status</h5>
+                                    <h5 class="mb-0">Mesh Status</h5>
             </div>
             <div class="card-body">
                                     <pre class="route-output">{{ mesh_status }}</pre>
@@ -372,7 +372,7 @@
             <div class="col-md-6">
                 <div class="card">
                     <div class="card-header">
-                                    <h5 class="mb-0">Configure NHRP</h5>
+                                    <h5 class="mb-0">Configure Mesh</h5>
                     </div>
                     <div class="card-body">
                                     <form method="post">
@@ -399,7 +399,7 @@
                                             <label class="form-label">Holding Time</label>
                                             <input type="number" name="holding_time" class="form-control" value="300">
                                         </div>
-                                        <button type="submit" class="btn btn-primary">Configure NHRP</button>
+                                        <button type="submit" class="btn btn-primary">Configure Mesh</button>
                         </form>
                     </div>
                 </div>
@@ -407,7 +407,7 @@
             <div class="col-md-6">
                 <div class="card">
                     <div class="card-header">
-                                    <h5 class="mb-0">FRR Configuration</h5>
+                                    <h5 class="mb-0">Router Configuration</h5>
                     </div>
                     <div class="card-body">
                                     <form method="post">
@@ -434,7 +434,7 @@
                                             <label class="form-label">Failover Delay (ms)</label>
                                             <input type="number" name="failover_delay" class="form-control" value="50">
                                         </div>
-                                        <button type="submit" class="btn btn-primary">Configure FRR</button>
+                                        <button type="submit" class="btn btn-primary">Configure Router</button>
                                     </form>
                                 </div>
                             </div>
